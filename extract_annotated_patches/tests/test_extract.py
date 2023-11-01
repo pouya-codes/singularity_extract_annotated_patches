@@ -82,7 +82,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
 
         patch_file = os.path.join(class_size_to_patch_path['Tumor'][patch_size], patch_file)
         patch = Image.open(patch_file)
-        assert patch.size = (patch_size, patch_size,)
+        assert patch.size == (patch_size, patch_size,)
 
     """Check Stroma patches"""
     extracted_coord_seq = list(cm.get_topleft_coords('Stroma'))
@@ -103,7 +103,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
 
         patch_file = os.path.join(class_size_to_patch_path['Stroma'][patch_size], patch_file)
         patch = Image.open(patch_file)
-        assert patch.size = (patch_size, patch_size,)
+        assert patch.size == (patch_size, patch_size,)
 
 
 def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
