@@ -59,7 +59,7 @@ def test_run(clean_output, mock_data):
 
         """Test Stroma Patches
         """
-        extracted_coord_seq = scm.get_slide(slide_name).get_topleft_coords('Stroma')
+        extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Stroma'))
         patch_dir = f"{OUTPUT_PATCH_DIR}/Stroma/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
         assert len(patch_files) > 0
