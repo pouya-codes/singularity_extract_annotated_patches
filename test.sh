@@ -12,7 +12,7 @@
 
 DLHOST04_SINGULARITY=/opt/singularity-3.4.0/bin
 if [[ -d "$DLHOST04_SINGULARITY" ]]; then
-    PATH="{$PATH}:{$DLHOST04_SINGULARITY}"
+    PATH="${PATH}:${DLHOST04_SINGULARITY}"
 fi
 if [[ -d /projects/ovcare/classification/cchen ]]; then
     cd /projects/ovcare/classification/cchen/ml/singularity_extract_annotated_patches
