@@ -22,7 +22,7 @@ class MockConnection(object):
     def send(self, obj):
         self.obj = obj
     
-    def recv(self, obj):
+    def recv(self):
         return self.obj
 
 def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
