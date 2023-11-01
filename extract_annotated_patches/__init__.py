@@ -206,11 +206,11 @@ class AnnotatedPatchesExtractor(OutputMixin):
                         patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                        resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         send_end.send(coords)
-        print("num_extracted", num_extracted)
+        print(f"{slide_name} num_extracted", num_extracted)
 
     def produce_args(self, cur_slide_paths):
         """Produce arguments to send to patch extraction subprocess. Creates subdirectories for patches if necessary.
