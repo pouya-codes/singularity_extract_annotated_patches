@@ -189,7 +189,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             os_slide = OpenSlide(slide_path)
             for path in paths:
                 x, y = os.path.splitext(os.path.basename(path))[0].split('_')
-                resize_size = int(utils.get_magnification_by_patch_path(path))
+                resize_size = int(utils.get_patchsize_by_patch_path(path))
                 if self.resize is not None and resize_size not in self.resize:
                     continue
                 os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -286,13 +286,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and self.store_extracted_patches:
-                        patch.save(os.path.join(patch_path))
-                    else:
-                        resized_patch = preprocess.resize(patch, resize_size)
-                        if self.store_extracted_patches:
-                            resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
+                    if self.store_extracted_patches:
+                        if resize_size == self.patch_size:
+                            patch.save(os.path.join(patch_path))
+                        else:
+                            resized_patch = preprocess.resize(patch, resize_size)
+                            resized_patch.save(os.path.join(patch_path))
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
@@ -338,13 +338,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 label = "Mix"
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and self.store_extracted_patches:
-                        patch.save(os.path.join(patch_path))
-                    else:
-                        resized_patch = preprocess.resize(patch, resize_size)
-                        if self.store_extracted_patches:
-                            resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
+                    if self.store_extracted_patches:
+                        if resize_size == self.patch_size:
+                            patch.save(os.path.join(patch_path))
+                        else:
+                            resized_patch = preprocess.resize(patch, resize_size)
+                            resized_patch.save(os.path.join(patch_path))
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
@@ -414,13 +414,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 label = "Mosaic"
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and self.store_extracted_patches:
-                        patch.save(os.path.join(patch_path))
-                    else:
-                        resized_patch = preprocess.resize(patch, resize_size)
-                        if self.store_extracted_patches:
-                            resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
+                    if self.store_extracted_patches:
+                        if resize_size == self.patch_size:
+                            patch.save(os.path.join(patch_path))
+                        else:
+                            resized_patch = preprocess.resize(patch, resize_size)
+                            resized_patch.save(os.path.join(patch_path))
                 coords.add_coord(label, x, y)
         print(f"From {dict_num_patch['total']} total patches, {dict_num_patch['tissue']} "
               f" of them contains tissue, and {dict_num_patch['selected']} are selected"
