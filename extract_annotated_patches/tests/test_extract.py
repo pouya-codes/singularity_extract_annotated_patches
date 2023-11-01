@@ -169,8 +169,9 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
         assert patch.size == (patch_size, patch_size,)
 
 
+@pytest.mark.skip(reason="")
 def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
-    """Extract and downsample patches from POLE/VOA-1932A
+    """Extract and downsample all annotated patches from POLE/VOA-1932A
 
     In all magnifications: 1914 Tumor, 126 Stroma
 
@@ -264,9 +265,9 @@ def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
         assert patch_512.size == (512, 512,)
         assert patch_256.size == (256, 256,)
 
-@pytest.mark.skip(reason="")
-def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
-    """Extract and downsample patches from POLE/VOA-1932A
+
+def test_from_arguments_use_directory_annotation_4(clean_output, mock_data):
+    """Extract and downsample 200 annotated patches from POLE/VOA-1932A
 
     """
     slide_path = mock_data['POLE/VOA-1932A']['slide_path']

@@ -1,6 +1,7 @@
 import os
 import shutil
 import pytest
+from PIL import Image
 import numpy as np
 
 from submodule_utils.metadata.annotation import GroovyAnnotation
