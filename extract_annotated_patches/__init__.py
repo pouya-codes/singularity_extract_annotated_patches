@@ -13,7 +13,8 @@ from submodule_utils.mixins import (OutputMixin, SlideCoordsMixin)
 from submodule_utils.annotation import GroovyAnnotation
 from submodule_utils.manifest.slide_coords import (
         SlideCoordsMetadata, CoordsMetadata)
-# from submodule_utils.manifest.patient_slides import PatientSlidesManifest
+import submodule_utils.image.preprocess as preprocess
+# from submodule_utils.manifest.patient_slides import PatientSlidesMetadata
 from submodule_cv.dataset import SlideCoordsExtractor
 
 logger = logging.getLogger('extract_annotated_patches')
@@ -57,7 +58,8 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
         """
         """
         if self.should_use_manifest:
-            return self.patient_slides.slidepaths
+            # return self.patient_slides.slidepaths
+            raise NotImplementedError("use-manifest is not yet implemented")
         elif self.should_use_directory:
             return utils.get_paths(self.slide_location, self.slide_pattern,
                     extensions=['tiff', 'svs', 'scn'])
@@ -103,11 +105,12 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
             self.slide_annotation = self.load_slide_annotation_lookup()
             self.patch_size = config.patch_size
             self.resize_sizes = config.resize_sizes
+            self.__resize_sizes = config.resize_sizes
             self.max_slide_patches = config.max_slide_patches
         elif self.should_use_slide_coords:
-            self.slide_coords = SlideCoordsMetadata.load(self.slide_coords_location)
-            self.patch_size = self.slide_coords.patch_size
-            self.resize_sizes = self.slide_coords.resize_sizes
+            self.slide_coords_metadata = SlideCoordsMetadata.load(self.slide_coords_location)
+            self.patch_size = self.slide_coords_metadata.patch_size
+            self.resize_sizes = self.slide_coords_metadata.resize_sizes
         else:
             raise NotImplementedError(f"Extract method {self.extract_method} not implemented")
 
@@ -121,10 +124,25 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
         pass
 
     def extract_patch_by_slide_coords(self, slide_path, class_size_to_patch_path):
-        # slide_name = utils.path_to_filename(slide_path)
-        # os_slide = OpenSlide(slide_path)
-        # pass
-        raise NotImplementedError()
+        slide_name = utils.path_to_filename(slide_path)
+        os_slide = OpenSlide(slide_path)
+        for data in self.slide_coords_metadata.get_slide(slide_name):
+            label, coord = data
+            x, y = coord
+            if self.is_tumor and label != BinaryEnum(1).name:
+                """Skip non-tumor patch if is_tumor is set.
+                """
+                continue
+
+            patch = preprocess.extract(os_slide, x, y, self.patch_size)
+            for resize_size in self.resize_sizes:
+                patch_path = class_size_to_patch_path[label][resize_size]
+                if resize_size == self.patch_size:
+                    patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                else:
+                    resized_patch = preprocess.resize(patch, resize_size)
+                    resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+
 
     def extract_patch_by_annotation(self, slide_path,
             class_size_to_patch_path, send_end):
@@ -145,7 +163,7 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
         """
         slide_name = utils.path_to_filename(slide_path)
         os_slide = OpenSlide(slide_path)
-        coords = CoordsMetadata()
+        coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         for idx, data in enumerate(SlideCoordsExtractor(os_slide, self.patch_size,
                 shuffle=True, seed=self.seed)):
             if self.max_slide_patches and idx > self.max_slide_patches:
@@ -154,15 +172,11 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
                 break
             patch, tile_loc, resized_patches = data
             tile_x, tile_y, x, y = tile_loc
-            label = None
-            if slide_name in self.slide_annotation:
-                """Get label corresponding to region the the patch coordinates are in.
-                """
-                label = self.slide_annotation[slide_name].points_to_label(
-                        np.array([[x, y],
-                            [x+self.patch_size, y],
-                            [x, y+self.patch_size],
-                            [x+self.patch_size, y+self.patch_size]]))
+            label = self.slide_annotation[slide_name].points_to_label(
+                    np.array([[x, y],
+                        [x+self.patch_size, y],
+                        [x, y+self.patch_size],
+                        [x+self.patch_size, y+self.patch_size]]))
             if not label:
                 """Skip unlabeled patches
                 """
@@ -217,6 +231,10 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
 
             class_size_to_patch_path = { }
             if self.should_use_annotation:
+                if slide_name not in self.slide_annotation:
+                    """Skip slide as there are no annotations for it.
+                    """
+                    continue
                 if self.is_tumor:
                     tumor_label = BinaryEnum(1).name
                     if tumor_label in self.slide_annotation[slide_name].labels:
@@ -225,13 +243,19 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
                     for label in self.slide_annotation[slide_name].labels:
                         class_size_to_patch_path[label] = make_patch_path(label)
             elif self.should_use_slide_coords:
+                if not self.slide_coords_metadata.has_slide(slide_name):
+                    """Skip slide as there are no slide coordinates for it.
+                    """
+                    continue
                 if self.is_tumor:
                     tumor_label = BinaryEnum(1).name
-                    if tumor_label in self.slide_coords.get_slide_labels(slide_name):
+                    if tumor_label in self.slide_coords_metadata \
+                            .get_slide(slide_name).labels:
                         class_size_to_patch_path[tumor_label] \
                                 = make_patch_path(tumor_label)
                 else:
-                    for label in self.slide_coords.get_slide_labels(slide_name):
+                    for label in self.slide_coords_metadata \
+                            .get_slide(slide_name).labels:
                         class_size_to_patch_path[label] = make_patch_path(label)
             else:
                 raise NotImplementedError(f"Extract method {self.extract_method} not implemented")
@@ -268,12 +292,13 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
             for p in processes:
                 p.join()
             coords_to_merge.extend(map(lambda x: x.recv(), recv_end_list))
-        # print()
+
         if self.should_use_annotation:
             """Merge slide coords
             """
             logger.info("Done loop. Saving slide coordinate metadata.")
-            slide_coords = SlideCoordsMetadata(self.slide_coords_location)
+            slide_coords = SlideCoordsMetadata(self.slide_coords_location,
+                    patch_size=self.patch_size, resize_sizes=self.__resize_sizes)
             slide_coords.consume_coords(coords_to_merge)
             slide_coords.save()
         logger.info("Done.")
