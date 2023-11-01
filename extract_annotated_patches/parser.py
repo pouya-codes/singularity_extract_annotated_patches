@@ -94,7 +94,7 @@ def create_parser(parser):
             help="Positive Index for selecting part of slides instead of all of it. "
             "(useful for array jobs)")
     parser_directory.add_argument("--slide_pattern", type=str,
-            default='subtype',
+            default='',
             help="'/' separated words describing the directory structure of the "
             "slide paths. Normally slides paths look like "
             "/path/to/slide/rootdir/subtype/slide.svs and if slide paths are "

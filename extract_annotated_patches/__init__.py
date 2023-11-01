@@ -162,7 +162,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         self.hd5_location = config.hd5_location
         self.seed = config.seed
         self.load_method = config.load_method
-        self.store_thumbnail = config.store_thumbnail
+        self.store_thumbnail = config.store_thumbnail     
         if self.should_use_manifest:
             self.manifest = utils.read_manifest(config.manifest_location)
             self.patch_location = config.patch_location
