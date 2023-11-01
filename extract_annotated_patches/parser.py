@@ -159,6 +159,12 @@ def create_parser(parser):
         parser_annotation.add_argument("--patch_size", type=int,
                 default=default_patch_size,
                 help="Patch size in pixels to extract from slide.")
+        parser_annotation.add_argument("--stride", type=int,
+                default=0,
+                help="Stride in pixels which determines the gap between each two extracted patches."
+                " NOTE: This value will be added with the patch_size for actual stride."
+                "For example, if patch_size is 2048 and stride is 2000, the actual stride "
+                "is 2000+2048=4048.")
         parser_annotation.add_argument("--resize_sizes", nargs='+', type=int,
                 help="List of patch sizes in pixels to resize the extracted patches and save. "
                 "Each size should be at most patch_size. "

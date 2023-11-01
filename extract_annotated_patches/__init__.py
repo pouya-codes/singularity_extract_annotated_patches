@@ -194,6 +194,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 self.annotation_overlap = config.annotation_overlap
                 self.patch_overlap = config.patch_overlap
                 self.patch_size = config.patch_size
+                self.stride = config.stride
                 self.is_tumor = config.is_tumor
                 self.is_TMA = config.is_TMA
                 self.slide_annotation = self.load_slide_annotation_lookup()
@@ -374,9 +375,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
         extracted_coordinates = []
         paths = []
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
+        shuffle_coordinate = True if self.max_slide_patches is not None else False
         for data in SlideCoordsExtractor(os_slide, self.patch_size, self.patch_overlap,
-                                         shuffle=True, seed=self.seed,
-                                         is_TMA=self.is_TMA):
+                                         shuffle=shuffle_coordinate, seed=self.seed,
+                                         is_TMA=self.is_TMA, stride=self.stride):
             if self.max_slide_patches is not None and num_extracted >= self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """

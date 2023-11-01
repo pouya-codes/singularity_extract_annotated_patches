@@ -4,9 +4,9 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 30 July 2021 by Amirali
+Last Update: 4 Aug 2021 by Amirali
 Developer: Colin Chen
-Version: 1.6
+Version: 1.6.3
 ```
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -271,6 +271,7 @@ usage: app.py from-arguments use-directory use-annotation [-h]
                                                           --slide_coords_location
                                                           SLIDE_COORDS_LOCATION
                                                           [--patch_size PATCH_SIZE]
+                                                          [--stride STRIDE]
                                                           [--resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]]
                                                           [--is_tumor]
                                                           [--is_TMA]
@@ -286,6 +287,9 @@ optional arguments:
   --patch_size PATCH_SIZE
                         Patch size in pixels to extract from slide.
                          (default: 1024)
+
+  --stride STRIDE       Stride in pixels which determines the gap between each two extracted patches. NOTE: This value will be added with the patch_size for actual stride.For example, if patch_size is 2048 and stride is 2000, the actual stride is 2000+2048=4048.
+                         (default: 0)
 
   --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
                         List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.

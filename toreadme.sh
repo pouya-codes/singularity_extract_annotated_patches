@@ -4,9 +4,9 @@ echo """# Extract Annotated Patches
 
 \`\`\`
 Date Created: 22 July 2020
-Last Update: 30 July 2021 by Amirali
+Last Update: 4 Aug 2021 by Amirali
 Developer: Colin Chen
-Version: 1.6
+Version: 1.6.3
 \`\`\`
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
