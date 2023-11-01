@@ -18,4 +18,5 @@ mkdir -p extract_annotated_patches/tests/outputs
 mkdir -p extract_annotated_patches/tests/mock/patches
 # pytest -s -vv extract_annotated_patches/tests/test_auxiliary.py
 # pytest -s -vv extract_annotated_patches/tests/test_extract_annotated_patches.py
-pytest -s -vv extract_annotated_patches/tests/
+pytest -s -vv extract_annotated_patches/tests/test_extract_annotated_patches.py::test_extract_1
+# pytest -s -vv extract_annotated_patches/tests/
