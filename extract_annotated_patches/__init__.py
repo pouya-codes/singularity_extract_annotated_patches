@@ -49,11 +49,11 @@ class AnnotatedPatchesExtractor(OutputMixin):
     @property
     def should_use_manifest(self):
         return self.load_method == 'use-manifest'
-    
+
     @property
     def should_use_directory(self):
         return self.load_method == 'use-directory'
-    
+
     @property
     def should_use_slide_coords(self):
         return self.extract_method == 'use-slide-coords'
@@ -80,10 +80,12 @@ class AnnotatedPatchesExtractor(OutputMixin):
         Returns
         -------
         dict of str: GroovyAnnotation
-            Lookup table for slide region annotations from slide names. 
+            Lookup table for slide region annotations from slide names.
         """
         slide_annotation = { }
         for file in os.listdir(self.annotation_location):
+            if file == '.DS_Store':
+                continue
             slide_name = utils.path_to_filename(file)
             filepath = os.path.join(self.annotation_location, file)
             slide_annotation[slide_name] = GroovyAnnotation(filepath)
@@ -106,7 +108,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
-        
+
         self.extract_method = config.extract_method
         self.slide_coords_location = config.slide_coords_location
         if self.should_use_annotation:
@@ -130,8 +132,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.n_process = config.num_patch_workers
         else:
             self.n_process = psutil.cpu_count()
-            
-    
+
+
     def print_parameters(self):
         """
         TODO: finish this.
@@ -201,7 +203,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """Skip non-tumor patch if is_tumor is set.
                 """
                 continue
-            
+
             patch = preprocess.extract(os_slide, x, y, self.patch_size)
             ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
             if utils.image.preprocess.check_luminance(ndpatch):
@@ -225,7 +227,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         ----------
         cur_slide_paths : list of str
             List of slide paths. Each path is sent to a subprocess to get slide to extract.
-        
+
         Returns
         -------
         list of tuple
