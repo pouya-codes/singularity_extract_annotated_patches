@@ -21,6 +21,7 @@ from submodule_utils.thumbnail import PlotThumbnail
 from submodule_utils.subtype_enum import BinaryEnum
 from submodule_utils.mixins import OutputMixin
 from submodule_utils.metadata.annotation import GroovyAnnotation
+from submodule_utils.metadata.tissue_mask import TissueMask
 from submodule_utils.metadata.slide_coords import (
         SlideCoordsMetadata, CoordsMetadata)
 from submodule_utils.image.extract import (
@@ -93,6 +94,35 @@ class AnnotatedPatchesExtractor(OutputMixin):
         else:
             raise NotImplementedError()
 
+    def load_slide_tissue_mask(self):
+        """Load tissue masks from slide names.
+        """
+        if self.should_use_manifest:
+            generator = self.manifest['mask_path']
+        elif self.should_use_directory:
+            generator = os.listdir(self.mask_location)
+        else:
+            raise NotImplementedError()
+        # if it is .png, we need to know the true size of slide
+        # since the mask is scale down version of it
+        list_slides = self.get_slide_paths()
+        slide_tissue_mask = {}
+        for file in generator:
+            if file.endswith(".png") or file.endswith(".txt"):
+                slide_name = utils.path_to_filename(file)
+                slide_path = utils.find_slide_path(list_slides, slide_name)
+                if slide_path is None: # the path to that slide was not found
+                    continue
+                else:
+                    os_slide = OpenSlide(slide_path)
+                    slide_size = os_slide.dimensions
+                if self.should_use_manifest:
+                    filepath = file
+                else:
+                    filepath = os.path.join(self.mask_location, file)
+                slide_tissue_mask[slide_name] = TissueMask(filepath, 0.4, self.patch_size,
+                                                           slide_size)
+        return slide_tissue_mask
 
 
     def load_slide_annotation_lookup(self):
@@ -154,6 +184,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.patch_location = config.patch_location
             self.slide_coords_location = config.slide_coords_location
             self.store_extracted_patches = config.store_extracted_patches
+            self.mask_location = config.mask_location
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
 
@@ -193,6 +224,15 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 self.resize_sizes = self.slide_coords_metadata.resize_sizes
             else:
                 raise NotImplementedError(f"Extract method {self.extract_method} not implemented")
+
+            if self.should_use_directory and self.mask_location is not None:
+                self.use_mask = True
+                self.mask = self.load_slide_tissue_mask()
+            elif self.should_use_manifest and 'mask_path' in self.manifest:
+                self.use_mask = True
+                self.mask = self.load_slide_tissue_mask()
+            else:
+                self.use_mask = False
 
             if not self.resize_sizes:
                 self.resize_sizes = [self.patch_size]
@@ -296,6 +336,16 @@ class AnnotatedPatchesExtractor(OutputMixin):
             return label, False
         return label, True
 
+    def check_tissue(self, slide_name, x, y):
+        label = self.mask[slide_name].points_to_label(
+                np.array([[x, y],
+                    [x, y+self.patch_size],
+                    [x+self.patch_size, y+self.patch_size],
+                    [x+self.patch_size, y]]))
+        if not label:
+            return False
+        return True
+
     def extract_patch_by_annotation(self, slide_path,
             class_size_to_patch_path, send_end):
         """Extracts patches using the steps:
@@ -331,6 +381,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 break
             tile_x, tile_y, x, y = data
+            if self.use_mask:
+                check_tissue = self.check_tissue(slide_name, x, y)
+                if not check_tissue:
+                    continue
             label, is_label = self.check_label(slide_name, x, y)
             if not is_label:
                 continue
@@ -349,6 +403,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 continue
             for coord in Coords:
                 x_, y_ = coord
+                if self.use_mask:
+                    check_tissue = self.check_tissue(slide_name, x_, y_)
+                    if not check_tissue:
+                        continue
                 label, is_label = self.check_label(slide_name, x_, y_)
                 if not is_label:
                     continue
@@ -359,7 +417,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
-            PlotThumbnail(slide_name, os_slide, hd5_file_path, self.slide_annotation[slide_name])
+            mask = self.mask[slide_name] if self.use_mask else None
+            PlotThumbnail(slide_name, os_slide, hd5_file_path, self.slide_annotation[slide_name], mask=mask)
         send_end.send(coords)
 
     def extract_patch_by_entire_slide(self, slide_path,
@@ -394,6 +453,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 break
             tile_x, tile_y, x, y = data
+            if self.use_mask:
+                check_tissue = self.check_tissue(slide_name, x, y)
+                if not check_tissue:
+                    continue
             if self.use_radius:
                 # stride = int((1-self.patch_overlap)*self.patch_size)
                 stride = self.patch_size
@@ -408,6 +471,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 continue
             for coord in Coords:
                 x_, y_ = coord
+                if self.use_mask:
+                    check_tissue = self.check_tissue(slide_name, x_, y_)
+                    if not check_tissue:
+                        continue
                 paths, check = self.extract_(os_slide, label, paths, x_, y_,
                                              class_size_to_patch_path)
                 if check:
@@ -415,7 +482,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
-            PlotThumbnail(slide_name, os_slide, hd5_file_path, None)
+            mask = self.mask[slide_name] if self.use_mask else None
+            PlotThumbnail(slide_name, os_slide, hd5_file_path, None, mask=mask)
         send_end.send(coords)
 
     def extract_patch_by_mosaic(self, slide_path,
@@ -448,6 +516,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
                                          is_TMA=False, stride=self.stride):
 
             tile_x, tile_y, x, y = data
+            if self.use_mask:
+                check_tissue = self.check_tissue(slide_name, x, y)
+                if not check_tissue:
+                    continue
             dict_num_patch['total'] += 1
             patch = preprocess.extract(os_slide, x, y, self.patch_size)
             ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
@@ -488,6 +560,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     Coords = [(x, y)]
                 for coord in Coords:
                     x_, y_ = coord
+                    if self.use_mask:
+                        check_tissue = self.check_tissue(slide_name, x_, y_)
+                        if not check_tissue:
+                            continue
                     paths, check = self.extract_(os_slide, label, paths, x_, y_,
                                                  class_size_to_patch_path)
                     if check:
@@ -501,7 +577,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                   "using radius option!")
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
-            PlotThumbnail(slide_name, os_slide, hd5_file_path, None)
+            mask = self.mask[slide_name] if self.use_mask else None
+            PlotThumbnail(slide_name, os_slide, hd5_file_path, None, mask=mask)
         send_end.send(coords)
 
 

@@ -4,9 +4,9 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 29 July 2021 by Amirali
+Last Update: 30 July 2021 by Amirali
 Developer: Colin Chen
-Version: 1.5
+Version: 1.6
 ```
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -183,6 +183,7 @@ usage: app.py from-arguments use-directory [-h] --patch_location
                                            [--store_extracted_patches]
                                            [--slide_idx SLIDE_IDX]
                                            [--slide_pattern SLIDE_PATTERN]
+                                           [--mask_location MASK_LOCATION]
                                            {use-slide-coords,use-annotation,use-entire-slide,use-mosaic}
                                            ...
 
@@ -239,6 +240,10 @@ optional arguments:
   --slide_pattern SLIDE_PATTERN
                         '/' separated words describing the directory structure of the slide paths. Normally slides paths look like /path/to/slide/rootdir/subtype/slide.svs and if slide paths are /path/to/slide/rootdir/slide.svs then simply pass ''.
                          (default: subtype)
+
+  --mask_location MASK_LOCATION
+                        Path to root directory which contains mask for tissue selection. It should contain png files or annotation file with label clear_area.
+                         (default: None)
 
 required arguments:
   --patch_location PATCH_LOCATION

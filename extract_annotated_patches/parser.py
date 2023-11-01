@@ -25,12 +25,12 @@ def create_parser(parser):
     parser.add_argument("--seed", type=int, default=default_seed,
             help="Seed for random shuffle.")
     parser.add_argument("--num_patch_workers", type=int,
-        help="Number of worker processes to multi-process patch extraction. "
-        "Default sets the number of worker processes to the number of CPU processes.")
+            help="Number of worker processes to multi-process patch extraction. "
+            "Default sets the number of worker processes to the number of CPU processes.")
     parser.add_argument("--store_thumbnail", action='store_true',
-        help="Whether or not save thumbnail with showing the position "
-        "of extracted patches. If yes, it will be stored at a folder called "
-        "Thumbnails in HD5 folder.")
+            help="Whether or not save thumbnail with showing the position "
+            "of extracted patches. If yes, it will be stored at a folder called "
+            "Thumbnails in HD5 folder.")
 
     help_subparsers_load = """Specify how to load slides to extract.
     There are 3 ways of extracting slides: from hd5 files, by manifest and by directory."""
@@ -99,6 +99,9 @@ def create_parser(parser):
             "slide paths. Normally slides paths look like "
             "/path/to/slide/rootdir/subtype/slide.svs and if slide paths are "
             "/path/to/slide/rootdir/slide.svs then simply pass ''.")
+    parser_directory.add_argument("--mask_location", type=dir_path,
+            help="Path to root directory which contains mask for tissue selection. "
+            "It should contain png files or annotation file with label clear_area.")
 
     subparsers_load_list = [parser_manifest, parser_directory]
 
