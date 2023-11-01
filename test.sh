@@ -10,9 +10,14 @@
 #SBATCH --chdir /projects/ovcare/classification/cchen/ml/singularity_extract_annotated_patches
 #SBATCH --mem=30G
 
-PATH="{$PATH}:/opt/singularity-3.4.0/bin"
-cd /projects/ovcare/classification/cchen/ml/singularity_extract_annotated_patches
-source /projects/ovcare/classification/cchen/{pyenv}
+DLHOST04_SINGULARITY=/opt/singularity-3.4.0/bin
+if [[ -d "$DLHOST04_SINGULARITY" ]]; then
+    PATH="{$PATH}:{$DLHOST04_SINGULARITY}"
+fi
+if [[ -d /projects/ovcare/classification/cchen ]]; then
+    cd /projects/ovcare/classification/cchen/ml/singularity_extract_annotated_patches
+    source /projects/ovcare/classification/cchen/{pyenv}
+fi
 
 mkdir -p extract_annotated_patches/tests/outputs
 mkdir -p extract_annotated_patches/tests/mock/patches
@@ -25,4 +30,3 @@ mkdir -p extract_annotated_patches/tests/mock/patches
 # pytest --durations=0 -s -vv extract_annotated_patches/tests/test_run.py
 pytest --durations=0 -s -vv extract_annotated_patches/tests/test_coords_run.py
 # pytest -s -vv extract_annotated_patches/tests/
-
