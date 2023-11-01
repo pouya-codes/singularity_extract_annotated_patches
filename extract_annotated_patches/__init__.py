@@ -210,6 +210,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         send_end.send(coords)
+        print("num_extracted", num_extracted)
 
     def produce_args(self, cur_slide_paths):
         """Produce arguments to send to patch extraction subprocess. Creates subdirectories for patches if necessary.
