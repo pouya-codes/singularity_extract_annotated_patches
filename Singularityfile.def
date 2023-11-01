@@ -24,10 +24,9 @@ From: debian:9
     conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
     conda update conda
-    if [[ -d submodule_utils ]]
-        echo "Installing submodule_utils"
-        pip install submodule_utils
-    fi
+    echo "Installing submodule_utils"
+    pip install submodule_utils
+    echo "Installing requirements"
     pip install -r requirements.txt
     conda list
 

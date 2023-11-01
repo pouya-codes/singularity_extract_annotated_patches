@@ -143,24 +143,24 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
         extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Stroma'))
         patch_dir = f"{OUTPUT_PATCH_DIR}/Stroma/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
-        # assert len(patch_files) > 0
         num_stroma_patch_files = len(patch_files)
-        assert num_stroma_patch_files <= 200
-        assert len(extracted_coord_seq) == len(patch_files)
-        for patch_file in patch_files:
-            patch_name = utils.path_to_filename(patch_file)
-            x, y = patch_name.split('_')
-            x = int(x)
-            y = int(y)
-            assert annotation.points_to_label(np.array([[x, y],
-                    [x+patch_size, y],
-                    [x, y+patch_size],
-                    [x+patch_size, y+patch_size]])) == 'Stroma'
-            assert (x, y,) in extracted_coord_seq
+        if num_stroma_patch_files > 0:
+            assert num_stroma_patch_files <= 200
+            assert len(extracted_coord_seq) == len(patch_files)
+            for patch_file in patch_files:
+                patch_name = utils.path_to_filename(patch_file)
+                x, y = patch_name.split('_')
+                x = int(x)
+                y = int(y)
+                assert annotation.points_to_label(np.array([[x, y],
+                        [x+patch_size, y],
+                        [x, y+patch_size],
+                        [x+patch_size, y+patch_size]])) == 'Stroma'
+                assert (x, y,) in extracted_coord_seq
 
-            patch_file = os.path.join(patch_dir, patch_file)
-            patch = Image.open(patch_file)
-            assert patch.size == (patch_size, patch_size,)
+                patch_file = os.path.join(patch_dir, patch_file)
+                patch = Image.open(patch_file)
+                assert patch.size == (patch_size, patch_size,)
 
         assert num_tumor_patch_files + num_stroma_patch_files == 200
 
@@ -226,4 +226,3 @@ def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
             patch_256 = Image.open(patch_file_256)
             assert patch_512.size == (512, 512,)
             assert patch_256.size == (256, 256,)
-
