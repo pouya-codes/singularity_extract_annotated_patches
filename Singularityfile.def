@@ -22,7 +22,7 @@ From: debian:9
     wget -c https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
     /bin/bash Anaconda3-2020.02-Linux-x86_64.sh -bfp /usr/local
     rm Anaconda3-2020.02-Linux-x86_64.sh
-    
+
     conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
     conda update conda
@@ -30,6 +30,7 @@ From: debian:9
     pip install /openslide-python
     pip install pyyaml h5py openslide-python tabulate matplotlib pandas Shapely numpy pytest
     pip install psutil tqdm
+    pip install --upgrade h5py
 
 %runscript
     python app.py $*
