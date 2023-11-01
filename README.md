@@ -1,5 +1,32 @@
 # Extract Annotated Patches
 
+To build the singularity image do:
+
+```
+singularity build --remote extract_annotated_patches.sif Singularityfile.def
+```
+
+Here's an example of the setup you can use:
+
+`experiment.yaml`
+
+```
+extract_annotated_patches:
+    patch_location: /projects/ovcare/classification/cchen/ml/data/test_ec/patches
+    use-directory:
+        slide_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slides
+        use-annotation:
+            annotation_location: /projects/ovcare/classification/cchen/ml/data/test_ec/annotations
+            slide_coords_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slide_coor
+ds.json
+            patch_size: 1024
+            resize_size: [256]
+```
+
+In the SH file, you should bind the path to the slides if the slides in your slides directory specified by `--slide_location` is symlinked.
+
+```
+singularity run     -B /projects/ovcare/classification/cchen     -B /projects/ovcare/WSI     extract_annotated_patches.sif     from-experiment-manifest /path/to/experiment.yaml 
 ## Usage
 
 ```
@@ -28,7 +55,9 @@ optional arguments:
   -h, --help            show this help message and exit
   --component_id COMPONENT_ID
 
-usage: app.py from-arguments [-h] [--is_tumor] [--seed SEED]
+usage: app.py from-arguments [-h] --patch_location PATCH_LOCATION [--is_tumor]
+                             [--seed SEED]
+                             [--num_patch_workers NUM_PATCH_WORKERS]
                              {use-manifest,use-directory} ...
 
 positional arguments:
@@ -57,6 +86,14 @@ optional arguments:
   --is_tumor            Only extract tumor patches. Default extracts tumor and
                         normal patches.
   --seed SEED           Seed for random shuffle.
+  --num_patch_workers NUM_PATCH_WORKERS
+                        Number of worker processes to multi-process patch
+                        extraction. Default sets the number of worker
+                        processes to the number of CPU processes.
+
+required arguments:
+  --patch_location PATCH_LOCATION
+                        Path to root directory to extract patches into.
 
 use-manifest is not implemented yet
 

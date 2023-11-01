@@ -34,7 +34,6 @@ singularity run \
     from-experiment-manifest /path/to/experiment.yaml \
 
 ## Usage
-\`\`\`
 
 \`\`\`""" > README.md
 
