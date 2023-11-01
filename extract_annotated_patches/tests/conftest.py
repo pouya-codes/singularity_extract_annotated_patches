@@ -46,12 +46,13 @@ def mock_data(slide_paths):
     slide_ids = map(create_slide_id, slide_paths)
     slide_id_to_path = zip(slide_ids, slide_paths)
     payload = { }
-    for id in ['MMRd/VOA-1099A']:
+    for id in ['MMRd/VOA-1099A', 'p53abn/VOA-3088B',
+            'p53wt/VOA-3266C', 'POLE/VOA-1932A']:
         x = next(filter(lambda x: x[0] == id, slide_id_to_path))
         slide_id, slide_path = x
         _, slide_name = slide_id.split('/')
         annotation_path = os.path.join(ANNOTATION_DIR, f"{slide_name}.txt")
-        payload[slide_name] = { }
-        payload[slide_name]['slide_path'] = slide_path
-        payload[slide_name]['annotation'] = GroovyAnnotation(annotation_path)
+        payload[slide_id] = { }
+        payload[slide_id]['slide_path'] = slide_path
+        payload[slide_id]['annotation'] = GroovyAnnotation(annotation_path)
     return payload

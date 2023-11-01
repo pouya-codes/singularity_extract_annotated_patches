@@ -31,7 +31,7 @@ def test_mock(annotated_slide_names, slide_paths, mock_data):
     assert 'p53abn/VOA-3088B' in slide_ids
     assert 'p53wt/VOA-3266C' in slide_ids
     assert 'POLE/VOA-1932A' in slide_ids
-    assert 'VOA-1099A' in mock_data
+    assert 'POLE/VOA-1932A' in mock_data
 
 def test_parse_args_1():
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
@@ -63,7 +63,7 @@ def test_parse_args_1():
     assert not ape.should_use_slide_coords
     assert ape.resize_sizes == [default_patch_size]
     assert ape.slide_pattern == utils.create_patch_pattern(default_slide_pattern)
-    area = ape.slide_annotation['VOA-1099A'].get_area()
+
 
 def test_parse_args_2():
     patch_size = 2048
@@ -105,6 +105,7 @@ def test_parse_args_2():
     assert ape.slide_pattern == utils.create_patch_pattern(default_slide_pattern)
     assert ape.max_slide_patches == max_slide_patches
 
+
 def test_get_slide_paths(slide_paths):
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
     args_str = f"""
@@ -120,7 +121,8 @@ def test_get_slide_paths(slide_paths):
     config = parser.get_args(args_str.split())
     ape = AnnotatedPatchesExtractor(config)
     assert sorted(slide_paths) == sorted(ape.get_slide_paths())
-    
+
+
 def test_load_slide_annotation_lookup(annotated_slide_names):
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
     args_str = f"""
@@ -152,8 +154,9 @@ def test_load_slide_annotation_lookup(annotated_slide_names):
                 actual = actual_path.vertices
                 np.testing.assert_array_equal(expected, actual)
 
+
 def test_produce_args_1(clean_output, mock_data):
-    slide_path = mock_data['VOA-1099A']['slide_path']
+    slide_path = mock_data['POLE/VOA-1932A']['slide_path']
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
     args_str = f"""
     from-arguments
@@ -176,11 +179,12 @@ def test_produce_args_1(clean_output, mock_data):
     assert [default_patch_size] == list(class_size_to_patch_path['Stroma'].keys())
     assert [default_patch_size] == list(class_size_to_patch_path['Tumor'].keys())
     assert class_size_to_patch_path['Stroma'][default_patch_size] \
-            == f"{OUTPUT_PATCH_DIR}/Stroma/MMRd/VOA-1099A/1024/40"
+            == f"{OUTPUT_PATCH_DIR}/Stroma/POLE/VOA-1932A/1024/40"
     assert class_size_to_patch_path['Tumor'][default_patch_size] \
-            == f"{OUTPUT_PATCH_DIR}/Tumor/MMRd/VOA-1099A/1024/40"
+            == f"{OUTPUT_PATCH_DIR}/Tumor/POLE/VOA-1932A/1024/40"
     assert os.path.isdir(class_size_to_patch_path['Stroma'][default_patch_size])
     assert os.path.isdir(class_size_to_patch_path['Tumor'][default_patch_size])
+
 
 def test_count_area():
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
@@ -198,6 +202,25 @@ def test_count_area():
     ape = AnnotatedPatchesExtractor(config)
     area = ape.slide_annotation['VOA-1099A'].get_area()
     print()
+    print('MMRd/VOA-1099A')
+    # VOA-1099A {'Stroma': 13.121841044401663, 'Tumor': 3748.764851032517} 3761.8866920769187
     print('Stroma: estimate patches extracted', area['Stroma'] / (1024**2))
     print('Tumor: estimate patches extracted', area['Tumor'] / (1024**2))
+    area = ape.slide_annotation['VOA-3088B'].get_area()
 
+    print('p53abn/VOA-3088B')
+    # VOA-3088B {'Stroma': 166.66897720862426, 'Tumor': 3654.73569757063} 3821.404674779254
+    print('Stroma: estimate patches extracted', area['Stroma'] / (1024**2))
+    print('Tumor: estimate patches extracted', area['Tumor'] / (1024**2))
+    area = ape.slide_annotation['VOA-1099A'].get_area()
+
+    print('p53wt/VOA-3266C')
+    # VOA-3266C {'Stroma': 54.97346750570068, 'Tumor': 1980.813060570782} 2035.7865280764827
+    print('Stroma: estimate patches extracted', area['Stroma'] / (1024**2))
+    print('Tumor: estimate patches extracted', area['Tumor'] / (1024**2))
+    area = ape.slide_annotation['VOA-1932A'].get_area()
+
+    print('POLE/VOA-1932A')
+    # VOA-1932A {'Stroma': 178.88628345905454, 'Tumor': 2264.354263377558} 2443.2405468366123
+    print('Stroma: estimate patches extracted', area['Stroma'] / (1024**2))
+    print('Tumor: estimate patches extracted', area['Tumor'] / (1024**2))
