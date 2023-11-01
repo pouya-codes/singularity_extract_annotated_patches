@@ -22,7 +22,7 @@ class MockConnection(object):
     def send(self, obj):
         self.obj = obj
     
-    def recv(self, obj):
+    def recv(self):
         return self.obj
 
 def test_extract_1(clean_output, mock_data):
