@@ -49,7 +49,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         When 'use-annotation' is set, we DO NOT set slide_coords. Instead each child process creates a SlideCoordsMetadata and then uses multiprocess.Pipe to send them to the parent process to merge.
     """
     FULL_MAGNIFICATION = 40
-    MAX_N_PROCESS = 48
+    MAX_N_PROCESS = 200
 
     def get_magnification(self, resize_size):
         return int(float(resize_size) * float(self.FULL_MAGNIFICATION) \
