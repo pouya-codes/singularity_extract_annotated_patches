@@ -176,7 +176,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         num_extracted = 0
         for data in SlideCoordsExtractor(os_slide, self.patch_size,
                 shuffle=True, seed=self.seed):
-            if self.max_slide_patches and num_extracted > self.max_slide_patches:
+            if self.max_slide_patches and num_extracted >= self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """
                 break

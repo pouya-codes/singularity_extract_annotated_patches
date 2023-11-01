@@ -206,7 +206,7 @@ def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
     patch_files_256 = os.listdir(class_size_to_patch_path['Tumor'][256])
     assert len(patch_files_512) > 0
     assert len(patch_files_512) <= int(area['Tumor'] / (1024**2))
-    assert len(extracted_coord_seq) == len(patch_files_512)
+    assert len(extracted_coord_seq) == len(patch_files_512) # err
     assert len(patch_files_256) == len(patch_files_512)
     for patch_file_256, patch_file_512 in zip(patch_files_256, patch_files_512):
         patch_name_512 = utils.path_to_filename(patch_file_512)
@@ -228,6 +228,7 @@ def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
         assert patch_512.size == (512, 512,)
         assert patch_256.size == (256, 256,)
 
+    """Check Stroma patches"""
     extracted_coord_seq = list(cm.get_topleft_coords('Stroma'))
     patch_files_512 = os.listdir(class_size_to_patch_path['Stroma'][512])
     patch_files_256 = os.listdir(class_size_to_patch_path['Stroma'][256])
