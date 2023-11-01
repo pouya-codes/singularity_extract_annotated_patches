@@ -36,14 +36,16 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
     config = parser.get_args(args_str.split())
     ape = AnnotatedPatchesExtractor(config)
     ape.run()
+
+    """Test SlideCoordsMetadata"""
     scm = SlideCoordsMetadata.load(slide_coords_location)
+
     for slide_id in mock_data.keys():
         _, slide_name = slide_id.split('/')
         annotation = mock_data[slide_id]['annotation']
         area = annotation.get_area()
 
-        """Test Tumor patches
-        """
+        """Test Tumor patches"""
         extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Tumor'))
         patch_dir = f"{OUTPUT_PATCH_DIR}/Tumor/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
@@ -61,8 +63,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
                     [x+patch_size, y+patch_size]])) == 'Tumor'
             assert (x, y,) in extracted_coord_seq
 
-        """Test Stroma Patches
-        """
+        """Test Stroma Patches"""
         extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Stroma'))
         patch_dir = f"{OUTPUT_PATCH_DIR}/Stroma/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
