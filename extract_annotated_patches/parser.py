@@ -20,19 +20,13 @@ epilog="""
         default_component_id=default_component_id)
 def create_parser(parser):
     parser_grp = parser.add_argument_group("required arguments")
-    parser_grp.add_argument("--patch_location", type=dir_path, required=True,
-            help="Path to root directory to extract patches into.")
     parser_grp.add_argument("--hd5_location", type=dir_path, required=True,
             help="Path to root directory to save hd5 into.")
-    parser.add_argument("--is_tumor", action='store_true',
-            help="Only extract tumor patches. Default extracts tumor and normal patches.")
     parser.add_argument("--seed", type=int, default=default_seed,
             help="Seed for random shuffle.")
     parser.add_argument("--num_patch_workers", type=int,
         help="Number of worker processes to multi-process patch extraction. "
         "Default sets the number of worker processes to the number of CPU processes.")
-    parser.add_argument("--store_extracted_patches", action='store_true',
-            help="Whether or not save extracted patches as png files on the disk.")
 
     help_subparsers_load = """Specify how to load slides to extract.
     There are 3 ways of extracting slides: from hd5 files, by manifest and by directory."""
@@ -74,16 +68,24 @@ def create_parser(parser):
     parser_manifest = subparsers_load.add_parser("use-manifest",
             help=help_manifest)
     parser_manifest_grp = parser_manifest.add_argument_group("required arguments")
+    parser_manifest_grp.add_argument("--patch_location", type=dir_path, required=True,
+            help="Path to root directory to extract patches into.")
     parser_manifest_grp.add_argument("--manifest_location", type=file_path, required=True,
             help="Path to manifest JSON file")
+    parser_manifest.add_argument("--store_extracted_patches", action='store_true',
+            help="Whether or not save extracted patches as png files on the disk.")
 
     help_directory = """Use a rootdir to locate slides.
     It is expected that slide paths have the structure '/path/to/rootdir/slide_pattern/slide_name.extension' where slide_pattern is usually 'subtype'. Patient IDs are extrapolated from slide_name using known, hardcoded regex."""
     parser_directory = subparsers_load.add_parser("use-directory",
             help=help_directory)
     parser_directory_grp = parser_directory.add_argument_group("required arguments")
+    parser_directory_grp.add_argument("--patch_location", type=dir_path, required=True,
+            help="Path to root directory to extract patches into.")
     parser_directory_grp.add_argument("--slide_location", type=dir_path, required=True,
             help="Path to slide rootdir.")
+    parser_directory.add_argument("--store_extracted_patches", action='store_true',
+            help="Whether or not save extracted patches as png files on the disk.")
     parser_directory.add_argument("--slide_idx", type=positive_int,
             help="Positive Index for selecting part of slides instead of all of it. "
             "(useful for array jobs)")
@@ -149,6 +151,8 @@ def create_parser(parser):
                 help="List of patch sizes in pixels to resize the extracted patches and save. "
                 "Each size should be at most patch_size. "
                 "Default simply saves the extracted patch.")
+        parser_annotation.add_argument("--is_tumor", action='store_true',
+                    help="Only extract tumor patches. Default extracts tumor and normal patches.")
         parser_annotation.add_argument("--is_TMA", action='store_true',
                 help="TMA cores are simple image instead of slide.")
         parser_annotation.add_argument("--patch_overlap", type=float,

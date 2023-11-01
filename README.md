@@ -4,7 +4,7 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 21 May 2021 by Amirali
+Last Update: 22 May 2021 by Amirali
 Developer: Colin Chen
 Version: 1.3.1
 ```
@@ -43,11 +43,8 @@ optional arguments:
 
   --component_id COMPONENT_ID
 
-usage: app.py from-arguments [-h] --patch_location PATCH_LOCATION
-                             --hd5_location HD5_LOCATION [--is_tumor]
-                             [--seed SEED]
+usage: app.py from-arguments [-h] --hd5_location HD5_LOCATION [--seed SEED]
                              [--num_patch_workers NUM_PATCH_WORKERS]
-                             [--store_extracted_patches]
                              {from-hd5-files,use-manifest,use-directory} ...
 
 positional arguments:
@@ -74,9 +71,6 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
 
-  --is_tumor            Only extract tumor patches. Default extracts tumor and normal patches.
-                         (default: False)
-
   --seed SEED           Seed for random shuffle.
                          (default: 256)
 
@@ -84,15 +78,7 @@ optional arguments:
                         Number of worker processes to multi-process patch extraction. Default sets the number of worker processes to the number of CPU processes.
                          (default: None)
 
-  --store_extracted_patches
-                        Whether or not save extracted patches as png files on the disk.
-                         (default: False)
-
 required arguments:
-  --patch_location PATCH_LOCATION
-                        Path to root directory to extract patches into.
-                         (default: None)
-
   --hd5_location HD5_LOCATION
                         Path to root directory to save hd5 into.
                          (default: None)
@@ -124,8 +110,10 @@ optional arguments:
                         List for determining desired resize. For example, if the HDF5 file has [256, 512, 1024] patches, and we are only interested in 256, we set this flag. [256]
                          (default: None)
 
-usage: app.py from-arguments use-directory [-h] --slide_location
+usage: app.py from-arguments use-directory [-h] --patch_location
+                                           PATCH_LOCATION --slide_location
                                            SLIDE_LOCATION
+                                           [--store_extracted_patches]
                                            [--slide_idx SLIDE_IDX]
                                            [--slide_pattern SLIDE_PATTERN]
                                            {use-slide-coords,use-annotation,use-entire-slide,use-mosaic}
@@ -173,6 +161,10 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
 
+  --store_extracted_patches
+                        Whether or not save extracted patches as png files on the disk.
+                         (default: False)
+
   --slide_idx SLIDE_IDX
                         Positive Index for selecting part of slides instead of all of it. (useful for array jobs)
                          (default: None)
@@ -182,6 +174,10 @@ optional arguments:
                          (default: subtype)
 
 required arguments:
+  --patch_location PATCH_LOCATION
+                        Path to root directory to extract patches into.
+                         (default: None)
+
   --slide_location SLIDE_LOCATION
                         Path to slide rootdir.
                          (default: None)
@@ -204,6 +200,7 @@ usage: app.py from-arguments use-directory use-annotation [-h]
                                                           SLIDE_COORDS_LOCATION
                                                           [--patch_size PATCH_SIZE]
                                                           [--resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]]
+                                                          [--is_tumor]
                                                           [--is_TMA]
                                                           [--patch_overlap PATCH_OVERLAP]
                                                           [--annotation_overlap ANNOTATION_OVERLAP]
@@ -219,6 +216,9 @@ optional arguments:
   --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
                         List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.
                          (default: None)
+
+  --is_tumor            Only extract tumor patches. Default extracts tumor and normal patches.
+                         (default: False)
 
   --is_TMA              TMA cores are simple image instead of slide.
                          (default: False)
@@ -331,15 +331,14 @@ In order to increase the speed of extract_annotated_patches, We should run paral
 #SBATCH -p upgrade
 
 singularity run -B /projects/ovcare/classification -B /projects/ovcare/WSI singularity_extract_annotated_patches.sif from-arguments \
- --patch_location path/to/folder \
  --hd5_location path/to/folder \
  --num_patch_workers 1 \
- --store_extracted_patches \
- --generate_patches_from_hd5_files \
  use-directory \
+ --patch_location path/to/folder \
  --slide_location path/to/folder \
  --slide_pattern subtype \
  --slide_idx $SLURM_ARRAY_TASK_ID \
+ --store_extracted_patches \
  use-entire-slide \
  --slide_coords_location path/to/file \
  --patch_size 2048 \

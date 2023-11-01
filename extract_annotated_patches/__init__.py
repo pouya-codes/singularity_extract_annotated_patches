@@ -116,32 +116,37 @@ class AnnotatedPatchesExtractor(OutputMixin):
         """
         TODO: fix import-annotations and export-annotations
         """
-        self.patch_location = config.patch_location
         self.hd5_location = config.hd5_location
-        self.is_tumor = config.is_tumor
         self.seed = config.seed
         self.load_method = config.load_method
-        self.store_extracted_patches = config.store_extracted_patches
         if self.should_use_manifest:
+            # self.patch_location = config.patch_location
             # self.manifest_location = config.manifest_location
-            # self.patient_slides = .load(self.manifest_location)
+            # self.store_extracted_patches = config.store_extracted_patches
             raise NotImplementedError("use-manifest is not yet implemented")
-        elif self.should_use_directory or self.should_use_hd5_files:
+        elif self.should_use_hd5_files:
             self.slide_location = config.slide_location
             self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
             self.slide_idx = config.slide_idx
-            if self.should_use_hd5_files: self.resize = config.resize
+            self.resize = config.resize
+        elif self.should_use_directory:
+            self.slide_location = config.slide_location
+            self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
+            self.slide_idx = config.slide_idx
+            self.extract_method = config.extract_method
+            self.patch_location = config.patch_location
+            self.slide_coords_location = config.slide_coords_location
+            self.store_extracted_patches = config.store_extracted_patches
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
 
-        if not self.should_use_hd5_files:
-            self.extract_method = config.extract_method
-            self.slide_coords_location = config.slide_coords_location
+        if self.should_use_directory:
             if self.should_use_annotation:
                 self.annotation_location = config.annotation_location
                 self.annotation_overlap = config.annotation_overlap
                 self.patch_overlap = config.patch_overlap
                 self.patch_size = config.patch_size
+                self.is_tumor = config.is_tumor
                 self.is_TMA = config.is_TMA
                 self.slide_annotation = self.load_slide_annotation_lookup()
                 self.resize_sizes = config.resize_sizes
