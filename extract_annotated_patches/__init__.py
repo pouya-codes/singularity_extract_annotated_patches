@@ -162,7 +162,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         self.hd5_location = config.hd5_location
         self.seed = config.seed
         self.load_method = config.load_method
-        self.store_thumbnail = config.store_thumbnail     
+        self.store_thumbnail = config.store_thumbnail
         if self.should_use_manifest:
             self.manifest = utils.read_manifest(config.manifest_location)
             self.patch_location = config.patch_location
@@ -185,6 +185,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.patch_location = config.patch_location
             self.slide_coords_location = config.slide_coords_location
             self.store_extracted_patches = config.store_extracted_patches
+            self.store_extracted_patches_as_hd5 = config.store_extracted_patches_as_hd5
             self.mask_location = config.mask_location
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
@@ -301,7 +302,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     resized_patch = preprocess.resize(patch, resize_size)
                     resized_patch.save(save_location)
 
-    def extract_(self, os_slide, label, paths, x, y, class_size_to_patch_path,
+    def extract_(self, os_slide, slide_name, label, paths, x, y, class_size_to_patch_path,
                  is_TMA=False, check_background=False):
         """ Had to ceate this function for radius patch extraction
         """
@@ -314,12 +315,24 @@ class AnnotatedPatchesExtractor(OutputMixin):
             for resize_size in self.resize_sizes:
                 patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
                 paths.append(patch_path)
+                # save as PNG
                 if self.store_extracted_patches:
                     if resize_size == self.patch_size:
                         patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
                         resized_patch.save(os.path.join(patch_path))
+                # save as a HD5 whose name is same as the image
+                elif self.store_extracted_patches_as_hd5:
+                    hd5_name = os.path.join(self.patch_location, f"{slide_name}.h5")
+                    hf = h5py.File(hd5_name, 'a')
+                    patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
+                    patch_path = patch_path[len(self.patch_location)+1:]
+                    if resize_size != self.patch_size:
+                        patch = preprocess.resize(patch, resize_size)
+                    hf.create_dataset(patch_path, data=patch, chunks=True,
+                                      compression="gzip", compression_opts=9)
+                    hf.close()
         return paths, check
 
     def check_label(self, slide_name, x, y):
@@ -401,7 +414,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             else:
                 Coords = [(x, y)]
             # check main image; if it is background, skip it
-            check = self.extract_(os_slide, label, paths, x, y, class_size_to_patch_path,
+            check = self.extract_(os_slide, slide_name, label, paths, x, y, class_size_to_patch_path,
                                   is_TMA=self.is_TMA, check_background=True)
             if not check:
                 continue
@@ -417,7 +430,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 for label in labels:
                     if (x_, y_) in extracted_coordinates[label]: # it has been previously extracted (usefull for radius)
                         continue
-                    paths, check = self.extract_(os_slide, label, paths, x_, y_,
+                    paths, check = self.extract_(os_slide, slide_name, label, paths, x_, y_,
                                                  class_size_to_patch_path, is_TMA=self.is_TMA)
                     if check:
                         num_extracted += 1
@@ -475,7 +488,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             else:
                 Coords = [(x, y)]
             # check main image; if it is background, skip it
-            check = self.extract_(os_slide, label, paths, x, y, class_size_to_patch_path,
+            check = self.extract_(os_slide, slide_name, label, paths, x, y, class_size_to_patch_path,
                                   check_background=True)
             if not check:
                 continue
@@ -487,7 +500,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                         continue
                 if (x_, y_) in extracted_coordinates[label]: # it has been previously extracted (usefull for radius)
                     continue
-                paths, check = self.extract_(os_slide, label, paths, x_, y_,
+                paths, check = self.extract_(os_slide, slide_name, label, paths, x_, y_,
                                              class_size_to_patch_path)
                 if check:
                     num_extracted += 1

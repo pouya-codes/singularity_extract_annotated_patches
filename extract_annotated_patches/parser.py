@@ -90,6 +90,8 @@ def create_parser(parser):
             help="Path to slide rootdir.")
     parser_directory.add_argument("--store_extracted_patches", action='store_true',
             help="Whether or not save extracted patches as png files on the disk.")
+    parser_directory.add_argument("--store_extracted_patches_as_hd5", action='store_true',
+            help="Whether or not save extracted patches as hd5 files on the disk.")
     parser_directory.add_argument("--slide_idx", type=positive_int,
             help="Positive Index for selecting part of slides instead of all of it. "
             "(useful for array jobs)")
