@@ -1,13 +1,18 @@
+# Built-ins
 import os
 import os.path
 import logging
 import json
+import multiprocessing as mp
+
+# Libraries
 import psutil
 from tqdm import tqdm
+import yaml
 import numpy as np
-import multiprocessing as mp
 from openslide import OpenSlide
 
+# Modules
 import submodule_utils as utils
 from submodule_utils.subtype_enum import BinaryEnum
 from submodule_utils.mixins import OutputMixin
@@ -17,8 +22,6 @@ from submodule_utils.metadata.slide_coords import (
 from submodule_utils.image.extract import (
         SlideCoordsExtractor, SlidePatchExtractor)
 import submodule_utils.image.preprocess as preprocess
-# from submodule_utils.manifest.patient_slides import PatientSlidesMetadata
-# from submodule_cv.dataset import SlideCoordsExtractor
 
 logger = logging.getLogger('extract_annotated_patches')
 

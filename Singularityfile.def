@@ -25,10 +25,11 @@ From: debian:9
     conda config --file /.condarc --add channels conda-forge
     conda update conda
     git clone https://github.com/openslide/openslide-python.git
-    pip install openslide-python
+    pip install /openslide-python
     git clone https://github.com/fireofearth/submodule_utils.git
     pip install /submodule_utils
-    pip install psutil
+    pip install psutil tqdm pyyaml numpy
+    pip install pytest
     conda list
 
 %runscript
