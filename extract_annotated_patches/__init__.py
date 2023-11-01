@@ -371,6 +371,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             os_slide = preprocess.expand(os_slide, self.patch_size, self.annotation_overlap)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         num_extracted = 0
+        extracted_coordinates = []
         paths = []
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
         for data in SlideCoordsExtractor(os_slide, self.patch_size, self.patch_overlap,
@@ -410,10 +411,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 label, is_label = self.check_label(slide_name, x_, y_)
                 if not is_label:
                     continue
+                if (x_, y_) in extracted_coordinates: # it has been previously extracted (usefull for radius)
+                    continue
                 paths, check = self.extract_(os_slide, label, paths, x_, y_,
                                              class_size_to_patch_path, is_TMA=self.is_TMA)
                 if check:
                     num_extracted += 1
+                    extracted_coordinates.append((x_, y_))
                     coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
@@ -442,6 +446,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         os_slide = OpenSlide(slide_path)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         num_extracted = 0
+        extracted_coordinates = []
         paths = []
         label = 'Mix'
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
@@ -475,10 +480,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     check_tissue = self.check_tissue(slide_name, x_, y_)
                     if not check_tissue:
                         continue
+                if (x_, y_) in extracted_coordinates: # it has been previously extracted (usefull for radius)
+                    continue
                 paths, check = self.extract_(os_slide, label, paths, x_, y_,
                                              class_size_to_patch_path)
                 if check:
                     num_extracted += 1
+                    extracted_coordinates.append((x_, y_))
                     coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
@@ -509,7 +517,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         dict_hist_coord = {'hist': [], 'coords': []}
         dict_num_patch = {'total': 0, 'tissue': 0, 'selected': 0, 'radius': 0}
         label = "Mosaic"
-
+        extracted_coordinates = []
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
         for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
                                          shuffle=False, seed=self.seed,
@@ -564,10 +572,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
                         check_tissue = self.check_tissue(slide_name, x_, y_)
                         if not check_tissue:
                             continue
+                    if (x_, y_) in extracted_coordinates: # it has been previously extracted (usefull for radius)
+                        continue
                     paths, check = self.extract_(os_slide, label, paths, x_, y_,
                                                  class_size_to_patch_path)
                     if check:
                         dict_num_patch['radius'] += 1
+                        extracted_coordinates.append((x_, y_))
                         coords.add_coord(label, x_, y_)
         print(f"From {dict_num_patch['total']} total patches, {dict_num_patch['tissue']} "
               f" of them contains tissue, and {dict_num_patch['selected']} are selected"
