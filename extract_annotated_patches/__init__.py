@@ -377,7 +377,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         for data in SlideCoordsExtractor(os_slide, self.patch_size, self.patch_overlap,
                                          shuffle=True, seed=self.seed,
                                          is_TMA=self.is_TMA):
-            if self.max_slide_patches and num_extracted >= self.max_slide_patches:
+            if self.max_slide_patches is not None and num_extracted >= self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """
                 break
@@ -453,7 +453,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
                                          shuffle=False, seed=self.seed,
                                          is_TMA=False, stride=self.stride):
-            if self.max_slide_patches and num_extracted >= self.max_slide_patches:
+            if self.max_slide_patches is not None and num_extracted >= self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """
                 break
