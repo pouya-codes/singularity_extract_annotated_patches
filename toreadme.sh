@@ -33,6 +33,8 @@ singularity run \
     extract_annotated_patches.sif \
     from-experiment-manifest /path/to/experiment.yaml \
 
+\`\`\`
+
 ## Usage
 
 \`\`\`""" > README.md

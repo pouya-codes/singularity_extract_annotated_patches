@@ -27,6 +27,8 @@ In the SH file, you should bind the path to the slides if the slides in your sli
 
 ```
 singularity run     -B /projects/ovcare/classification/cchen     -B /projects/ovcare/WSI     extract_annotated_patches.sif     from-experiment-manifest /path/to/experiment.yaml 
+```
+
 ## Usage
 
 ```
