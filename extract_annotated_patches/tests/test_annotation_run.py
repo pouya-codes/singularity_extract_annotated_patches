@@ -125,7 +125,8 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
         patch_dir = f"{OUTPUT_PATCH_DIR}/Tumor/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
         assert len(patch_files) > 0
-        assert len(patch_files) <= 200
+        num_tumor_patch_files = len(patch_files)
+        assert num_tumor_patch_files <= 200
         assert len(extracted_coord_seq) == len(patch_files)
         for patch_file in patch_files:
             patch_name = utils.path_to_filename(patch_file)
@@ -139,12 +140,12 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
             assert (x, y,) in extracted_coord_seq
 
         """Test Stroma Patches"""
-        return
         extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Stroma'))
         patch_dir = f"{OUTPUT_PATCH_DIR}/Stroma/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
-        assert len(patch_files) > 0
-        assert len(patch_files) <= 200
+        # assert len(patch_files) > 0
+        num_stroma_patch_files = len(patch_files)
+        assert len(num_stroma_patch_files) <= 200
         assert len(extracted_coord_seq) == len(patch_files)
         for patch_file in patch_files:
             patch_name = utils.path_to_filename(patch_file)
@@ -160,6 +161,8 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
             patch_file = os.path.join(patch_dir, patch_file)
             patch = Image.open(patch_file)
             assert patch.size == (patch_size, patch_size,)
+
+        assert num_tumor_patch_files + num_stroma_patch_files == 200
 
 
 # @pytest.mark.skip(reason="not finished")
