@@ -26,7 +26,7 @@ def create_parser(parser):
             help="Only extract tumor patches. Default extracts tumor and normal patches.")
     parser.add_argument("--seed", type=int, default=default_seed,
             help="Seed for random shuffle.")
-    parser.add_argument("--num_patch_workers", type=int, required=False,
+    parser.add_argument("--num_patch_workers", type=int,
         help="Number of worker processes to multi-process patch extraction. "
         "Default sets the number of worker processes to the number of CPU processes.")
 
@@ -72,7 +72,7 @@ def create_parser(parser):
 
     for subparser in subparsers_load_list:
         help_subparsers_extract = """Specify which coordinates in the slides to extract.
-        There are 2 ways of extracting patches: by slide_cords and by annotation."""
+        There are 3 ways of extracting patches: by slide_cords, by annotation, and by entire_slide."""
         subparsers_extract = subparser.add_subparsers(dest="extract_method",
                 required=True,
                 parser_class=AIMArgumentParser,
@@ -119,15 +119,39 @@ def create_parser(parser):
         parser_annotation.add_argument("--patch_size", type=int,
                 default=default_patch_size,
                 help="Patch size in pixels to extract from slide.")
-        parser_annotation.add_argument("--resize_sizes", nargs='+', type=int, required=False,
+        parser_annotation.add_argument("--resize_sizes", nargs='+', type=int,
                 help="List of patch sizes in pixels to resize the extracted patches and save. "
                 "Each size should be at most patch_size. "
                 "Default simply saves the extracted patch.")
         parser_annotation.add_argument("--is_TMA", action='store_true',
                 help="TMA cores are simple image instead of slide.")
-        parser_annotation.add_argument("--patch_overlap", type=float, required=False,
+        parser_annotation.add_argument("--patch_overlap", type=float,
                 default=0, help="Overlap between extracted patches.")
-        parser_annotation.add_argument("--annotation_overlap", type=float, required=False,
+        parser_annotation.add_argument("--annotation_overlap", type=float,
                 default=1.0, help="Patches having overlapp above this value with the annotated pixels will be extracted.")
-        parser_annotation.add_argument("--max_slide_patches", type=int, required=False,
+        parser_annotation.add_argument("--max_slide_patches", type=int,
+                help="Select at most max_slide_patches number of patches from each slide.")
+
+        help_entire = """Extracting patches from the whole slide. In this way,
+        both tumor and normal areas will be extracted.
+        The label is called Mix."""
+        parser_entire = subparsers_extract.add_parser("use-entire-slide",
+                help=help_entire)
+        parser_entire_grp = parser_entire.add_argument_group("required arguments")
+        parser_entire_grp.add_argument("--slide_coords_location", type=str, required=True,
+                help="Path to slide coords JSON file to save extracted patch coordinates.")
+        parser_entire.add_argument("--patch_size", type=int,
+                default=default_patch_size,
+                help="Patch size in pixels to extract from slide.")
+        parser_entire.add_argument("--stride", type=int,
+                default=0,
+                help="Stride in pixels which determines the gap between each two extracted patches."
+                " NOTE: This value will be added with the patch_size for actual stride."
+                "For example, if patch_size is 2048 and stride is 2000, the actual stride "
+                "is 2000+2048=4048.")
+        parser_entire.add_argument("--resize_sizes", nargs='+', type=int,
+                help="List of patch sizes in pixels to resize the extracted patches and save. "
+                "Each size should be at most patch_size. "
+                "Default simply saves the extracted patch.")
+        parser_entire.add_argument("--max_slide_patches", type=int,
                 help="Select at most max_slide_patches number of patches from each slide.")

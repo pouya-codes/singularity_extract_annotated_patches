@@ -62,6 +62,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
     def should_use_annotation(self):
         return self.extract_method == 'use-annotation'
 
+    @property
+    def should_use_entire_slide(self):
+        return self.extract_method == 'use-entire-slide'
+
     def get_slide_paths(self):
         """Get paths of slides that should be extracted.
         """
@@ -120,6 +124,11 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.slide_annotation = self.load_slide_annotation_lookup()
             self.resize_sizes = config.resize_sizes
             self.__resize_sizes = config.resize_sizes
+            self.max_slide_patches = config.max_slide_patches
+        elif self.should_use_entire_slide:
+            self.stride = config.stride
+            self.patch_size = config.patch_size
+            self.resize_sizes = config.resize_sizes
             self.max_slide_patches = config.max_slide_patches
         elif self.should_use_slide_coords:
             self.slide_coords_metadata = SlideCoordsMetadata.load(self.slide_coords_location)
@@ -233,6 +242,53 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 coords.add_coord(label, x, y)
         send_end.send(coords)
 
+    def extract_patch_by_entire_slide(self, slide_path,
+            class_size_to_patch_path, send_end):
+        """Extracts patches using the steps:
+         1. Moves a sliding, non-overlaping window to extract each patch to Pillow patch.
+         2. Converts patch to ndarray ndpatch and skips to next patch if background
+
+        Parameters
+        ----------
+        slide_path : str
+            Path of slide to extract patch
+
+        class_size_to_patch_path : dict
+            To get the patch path a store evaluated patch using evaluated label name and patch size as keys
+
+        send_end : multiprocessing.connection.Connection
+            Connection to send recorded coords metadata of a slide to parent.
+        """
+        slide_name = utils.path_to_filename(slide_path)
+        os_slide = OpenSlide(slide_path)
+        coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
+        num_extracted = 0
+        for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
+                                         shuffle=False, seed=self.seed,
+                                         is_TMA=False, stride=self.stride):
+            if self.max_slide_patches and num_extracted >= self.max_slide_patches:
+                """Stop extracting patches once we have reach the max number of them for this slide.
+                """
+                break
+            tile_x, tile_y, x, y = data
+            patch = preprocess.extract(os_slide, x, y, self.patch_size)
+            ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
+            check = utils.image.preprocess.check_luminance(ndpatch)
+            if check:
+                """Save labeled forground patch
+                """
+                label = "Mix"
+                for resize_size in self.resize_sizes:
+                    patch_path = class_size_to_patch_path[label][resize_size]
+                    if resize_size == self.patch_size:
+                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    else:
+                        resized_patch = preprocess.resize(patch, resize_size)
+                        resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                num_extracted += 1
+                coords.add_coord(label, x, y)
+        send_end.send(coords)
+
     def produce_args(self, cur_slide_paths):
         """Produce arguments to send to patch extraction subprocess. Creates subdirectories for patches if necessary.
 
@@ -277,6 +333,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 else:
                     for label in self.slide_annotation[slide_name].labels:
                         class_size_to_patch_path[label] = make_patch_path(label)
+            elif self.should_use_entire_slide:
+                label = "Mix"
+                class_size_to_patch_path[label] = make_patch_path(label)
             elif self.should_use_slide_coords:
                 if not self.slide_coords_metadata.has_slide(slide_name):
                     """Skip slide as there are no slide coordinates for it.
@@ -320,6 +379,11 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     recv_end_list.append(recv_end)
                     args = (*args, send_end,)
                     p = mp.Process(target=self.extract_patch_by_annotation, args=args)
+                elif self.should_use_entire_slide:
+                    recv_end, send_end = mp.Pipe(False)
+                    recv_end_list.append(recv_end)
+                    args = (*args, send_end,)
+                    p = mp.Process(target=self.extract_patch_by_entire_slide, args=args)
                 elif self.should_use_slide_coords:
                     p = mp.Process(target=self.extract_patch_by_slide_coords, args=args)
                 p.start()
