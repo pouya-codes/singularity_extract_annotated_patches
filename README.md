@@ -4,7 +4,7 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 24 April 2021 by Amirali
+Last Update: 18 May 2021 by Amirali
 Developer: Colin Chen
 Version: 1.2
 ```
@@ -43,9 +43,11 @@ optional arguments:
 
   --component_id COMPONENT_ID
 
-usage: app.py from-arguments [-h] --patch_location PATCH_LOCATION [--is_tumor]
+usage: app.py from-arguments [-h] --patch_location PATCH_LOCATION
+                             --hd5_location HD5_LOCATION [--is_tumor]
                              [--seed SEED]
                              [--num_patch_workers NUM_PATCH_WORKERS]
+                             [--store_extracted_patches]
                              {use-manifest,use-directory} ...
 
 positional arguments:
@@ -80,9 +82,17 @@ optional arguments:
                         Number of worker processes to multi-process patch extraction. Default sets the number of worker processes to the number of CPU processes.
                          (default: None)
 
+  --store_extracted_patches
+                        Whether or not save extracted patches as png files on the disk.
+                         (default: False)
+
 required arguments:
   --patch_location PATCH_LOCATION
                         Path to root directory to extract patches into.
+                         (default: None)
+
+  --hd5_location HD5_LOCATION
+                        Path to root directory to save hd5 into.
                          (default: None)
 
 use-manifest is not implemented yet
@@ -295,7 +305,9 @@ In order to increase the speed of extract_annotated_patches, We should run paral
 
 singularity run -B /projects/ovcare/classification -B /projects/ovcare/WSI singularity_extract_annotated_patches.sif from-arguments \
  --patch_location path/to/folder \
+ --hd5_location path/to/folder \
  --num_patch_workers 1 \
+ --store_extracted_patches \
  use-directory \
  --slide_location path/to/folder \
  --slide_pattern subtype \
