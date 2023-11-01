@@ -27,6 +27,10 @@ def create_parser(parser):
     parser.add_argument("--num_patch_workers", type=int,
         help="Number of worker processes to multi-process patch extraction. "
         "Default sets the number of worker processes to the number of CPU processes.")
+    parser.add_argument("--store_thumbnail", action='store_true',
+        help="Whether or not save thumbnail with showing the position "
+        "of extracted patches. If yes, it will be stored at a folder called "
+        "Thumbnails in HD5 folder.")
 
     help_subparsers_load = """Specify how to load slides to extract.
     There are 3 ways of extracting slides: from hd5 files, by manifest and by directory."""

@@ -4,9 +4,9 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 3 June 2021 by Amirali
+Last Update: 9 June 2021 by Amirali
 Developer: Colin Chen
-Version: 1.3.1
+Version: 1.3.2
 ```
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -45,6 +45,7 @@ optional arguments:
 
 usage: app.py from-arguments [-h] --hd5_location HD5_LOCATION [--seed SEED]
                              [--num_patch_workers NUM_PATCH_WORKERS]
+                             [--store_thumbnail]
                              {from-hd5-files,use-manifest,use-directory} ...
 
 positional arguments:
@@ -77,6 +78,9 @@ optional arguments:
   --num_patch_workers NUM_PATCH_WORKERS
                         Number of worker processes to multi-process patch extraction. Default sets the number of worker processes to the number of CPU processes.
                          (default: None)
+
+  --store_thumbnail     Whether or not save thumbnail with showing the position of extracted patches. If yes, it will be stored at a folder called Thumbnails in HD5 folder.
+                         (default: False)
 
 required arguments:
   --hd5_location HD5_LOCATION

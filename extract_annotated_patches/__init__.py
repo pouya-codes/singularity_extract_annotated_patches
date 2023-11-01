@@ -17,6 +17,7 @@ from sklearn.cluster import KMeans
 
 # Modules
 import submodule_utils as utils
+from submodule_utils.thumbnail import PlotThumbnail
 from submodule_utils.subtype_enum import BinaryEnum
 from submodule_utils.mixins import OutputMixin
 from submodule_utils.metadata.annotation import GroovyAnnotation
@@ -119,6 +120,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         self.hd5_location = config.hd5_location
         self.seed = config.seed
         self.load_method = config.load_method
+        self.store_thumbnail = config.store_thumbnail
         if self.should_use_manifest:
             # self.patch_location = config.patch_location
             # self.manifest_location = config.manifest_location
@@ -209,6 +211,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 else:
                     resized_patch = preprocess.resize(patch, resize_size)
                     resized_patch.save(path)
+            logger.info(f"{counter} patches are selected from {slide_name}.")
+            if self.store_thumbnail:
+                PlotThumbnail(slide_name, os_slide, hd5_file_location, None)
         except Exception as e:
             logger.error(f"could not process f{hd5_file_location}\n{e}")
 
@@ -306,6 +311,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
+        if self.store_thumbnail:
+            PlotThumbnail(slide_name, os_slide, hd5_file_path, self.slide_annotation[slide_name])
         send_end.send(coords)
 
     def extract_patch_by_entire_slide(self, slide_path,
@@ -358,6 +365,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
+        if self.store_thumbnail:
+            PlotThumbnail(slide_name, os_slide, hd5_file_path, None)
         send_end.send(coords)
 
     def extract_patch_by_mosaic(self, slide_path,
@@ -437,6 +446,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
               f" of them contains tissue, and {dict_num_patch['selected']} are selected"
               f" for representing {slide_name}.")
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
+        if self.store_thumbnail:
+            PlotThumbnail(slide_name, os_slide, hd5_file_path, None)
         send_end.send(coords)
 
 
