@@ -82,7 +82,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
 
         patch_file = os.path.join(class_size_to_patch_path['Tumor'][patch_size], patch_file)
         patch = Image.open(patch_file)
-        assert patch.size = (patch_size, patch_size,)
+        assert patch.size == (patch_size, patch_size,)
 
     """Check Stroma patches"""
     extracted_coord_seq = list(cm.get_topleft_coords('Stroma'))
@@ -103,7 +103,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
 
         patch_file = os.path.join(class_size_to_patch_path['Stroma'][patch_size], patch_file)
         patch = Image.open(patch_file)
-        assert patch.size = (patch_size, patch_size,)
+        assert patch.size == (patch_size, patch_size,)
 
 
 def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
@@ -160,7 +160,7 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
 
         patch_file = os.path.join(class_size_to_patch_path['Tumor'][patch_size], patch_file)
         patch = Image.open(patch_file)
-        assert patch.size = (patch_size, patch_size,)
+        assert patch.size == (patch_size, patch_size,)
 
 
 def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
@@ -225,8 +225,8 @@ def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
         patch_file_256 = os.path.join(class_size_to_patch_path['Tumor'][256], patch_file_256)
         patch_512 = Image.open(patch_file_512)
         patch_256 = Image.open(patch_file_256)
-        assert patch_512.size = (512, 512,)
-        assert patch_256.size = (256, 256,)
+        assert patch_512.size == (512, 512,)
+        assert patch_256.size == (256, 256,)
 
     extracted_coord_seq = list(cm.get_topleft_coords('Stroma'))
     patch_files_512 = os.listdir(class_size_to_patch_path['Stroma'][512])
@@ -252,5 +252,5 @@ def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
         patch_file_256 = os.path.join(class_size_to_patch_path['Stroma'][256], patch_file_256)
         patch_512 = Image.open(patch_file_512)
         patch_256 = Image.open(patch_file_256)
-        assert patch_512.size = (512, 512,)
-        assert patch_256.size = (256, 256,)
+        assert patch_512.size == (512, 512,)
+        assert patch_256.size == (256, 256,)

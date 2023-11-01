@@ -82,7 +82,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
 
             patch_file = os.path.join(patch_dir, patch_file)
             patch = Image.open(patch_file)
-            assert patch.size = (patch_size, patch_size,)
+            assert patch.size == (patch_size, patch_size,)
 
 
 # @pytest.mark.skip(reason="not finished")
@@ -145,5 +145,5 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
             patch_file_256 = os.path.join(patch_dir_256, patch_file_256)
             patch_512 = Image.open(patch_file_512)
             patch_256 = Image.open(patch_file_256)
-            assert patch_512.size = (512, 512,)
-            assert patch_256.size = (256, 256,)
+            assert patch_512.size == (512, 512,)
+            assert patch_256.size == (256, 256,)
