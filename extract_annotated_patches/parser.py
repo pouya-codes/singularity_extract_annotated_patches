@@ -98,7 +98,8 @@ def create_parser(parser):
             help="'/' separated words describing the directory structure of the "
             "slide paths. Normally slides paths look like "
             "/path/to/slide/rootdir/subtype/slide.svs and if slide paths are "
-            "/path/to/slide/rootdir/slide.svs then simply pass ''.")
+            "/path/to/slide/rootdir/slide.svs then simply pass '' (using bash "
+            "script, it is impossible to pass '', therefore in that case, use "'".).")
     parser_directory.add_argument("--mask_location", type=dir_path,
             help="Path to root directory which contains mask for tissue selection. "
             "It should contain png files or annotation file with label clear_area.")
