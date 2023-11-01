@@ -21,16 +21,17 @@ From: debian:9
     echo "Installing Python libraries"
     wget -c https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
     /bin/bash Anaconda3-2020.02-Linux-x86_64.sh -bfp /usr/local
+    rm Anaconda3-2020.02-Linux-x86_64.sh
+    
     conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
     conda update conda
     git clone https://github.com/openslide/openslide-python.git
     pip install /openslide-python
-    git clone https://github.com/fireofearth/submodule_utils.git
-    pip install /submodule_utils
+    git clone https://github.com/pouya1991/AIMLab_submodule_utils.git
+    pip install -e ./AIMLab_submodule_utils
     pip install psutil tqdm pyyaml numpy
     pip install pytest
-    conda list
 
 %runscript
     python app.py $*
