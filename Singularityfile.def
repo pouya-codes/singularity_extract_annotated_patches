@@ -24,10 +24,11 @@ From: debian:9
     conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
     conda update conda
-    echo "Installing submodule_utils"
-    pip install submodule_utils
-    echo "Installing requirements"
-    pip install -r requirements.txt
+    git clone https://github.com/openslide/openslide-python.git
+    pip install openslide-python
+    git clone https://github.com/fireofearth/submodule_utils.git
+    pip install /submodule_utils
+    pip install psutil
     conda list
 
 %runscript

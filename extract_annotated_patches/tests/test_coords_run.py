@@ -61,11 +61,11 @@ def test_from_arguments_use_directory_slide_coords_1(clean_output, mock_data):
             assert (x, y,) in extracted_coord_seq
 
         """Test Stroma Patches"""
-        extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Stroma'))
         patch_dir = f"{OUTPUT_PATCH_DIR}/Stroma/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
         num_stroma_patch_files = len(patch_files)
         if num_stroma_patch_files > 0:
+            extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Stroma'))
             assert num_stroma_patch_files <= 200
             assert len(extracted_coord_seq) == len(patch_files)
             for patch_file in patch_files:
