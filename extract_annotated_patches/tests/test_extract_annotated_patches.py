@@ -56,9 +56,11 @@ def test_extract_1(clean_output, mock_data):
     """Check Stroma patches
     """
     annotation = mock_data['VOA-1099A']['annotation']
+    area = ape.slide_annotation['VOA-1099A'].get_area()
     extracted_coord_seq = cm.get_topleft_coords('Tumor')
     patch_files = os.listdir(class_size_to_patch_path['Tumor'][patch_size])
     assert len(patch_files) > 0
+    assert len(patch_files) <= int(area['Tumor'] / (1024**2))
     assert len(coord_seq) == len(patch_files)
     for patch_file in patch_files:
         patch_name = utils.path_to_filename(patch_file)
@@ -74,6 +76,7 @@ def test_extract_1(clean_output, mock_data):
     extracted_coord_seq = cm.get_topleft_coords('Stroma')
     patch_files = os.listdir(class_size_to_patch_path['Stroma'][patch_size])
     assert len(patch_files) > 0
+    assert len(patch_files) <= int(area['Stroma'] / (1024**2))
     assert len(coord_seq) == len(patch_files)
     for patch_file in patch_files:
         patch_name = utils.path_to_filename(patch_file)
