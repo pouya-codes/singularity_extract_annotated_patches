@@ -29,3 +29,5 @@ SLIDE_DIR = 'extract_annotated_patches/tests/mock/slides'
 
 create_slide_id = lambda path: utils.create_patch_id(path,
         utils.create_patch_pattern(default_slide_pattern))
+
+list_to_space_sep_str = labmbdat l : ' '.join(map(str, l))
