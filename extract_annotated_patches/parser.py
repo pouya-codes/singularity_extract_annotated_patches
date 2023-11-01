@@ -51,6 +51,13 @@ def create_parser(parser):
             "slide paths. Normally slides paths look like "
             "/path/to/slide/rootdir/subtype/slide.svs and if slide paths are "
             "/path/to/slide/rootdir/slide.svs then simply pass ''.")
+    parser_hd5_files.add_argument("--slide_idx", type=positive_int,
+            help="Positive Index for selecting part of slides instead of all of it. "
+            "(useful for array jobs)")
+    parser_hd5_files.add_argument("--resize", nargs='+', type=int,
+            help="List for determining desired resize. For example, if the HDF5 file"
+            " has [256, 512, 1024] patches, and we are only interested in 256, we "
+            "set this flag. [256]")
 
 
     help_manifest = """Use manifest file to locate slides.

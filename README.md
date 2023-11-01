@@ -4,9 +4,9 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 18 May 2021 by Amirali
+Last Update: 21 May 2021 by Amirali
 Developer: Colin Chen
-Version: 1.2
+Version: 1.3.1
 ```
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -48,12 +48,14 @@ usage: app.py from-arguments [-h] --patch_location PATCH_LOCATION
                              [--seed SEED]
                              [--num_patch_workers NUM_PATCH_WORKERS]
                              [--store_extracted_patches]
-                             {use-manifest,use-directory} ...
+                             {from-hd5-files,use-manifest,use-directory} ...
 
 positional arguments:
-  {use-manifest,use-directory}
+  {from-hd5-files,use-manifest,use-directory}
                         Specify how to load slides to extract.
-                            There are 2 ways of extracting slides: by manifest and by directory.
+                            There are 3 ways of extracting slides: from hd5 files, by manifest and by directory.
+    from-hd5-files      uses pre created hd5 files located at hd5_location to create and store images in patch_location
+
     use-manifest        Use manifest file to locate slides.
                             A manifest JSON file contains keys 'patients', and optionally 'patient_regex' which is the regex string used to extract the patient from the slide name.
                             The key 'patients' which is a dictionary where each key is a patient ID and value is a list of slide paths for the slides corresponding to the patient.
@@ -96,6 +98,31 @@ required arguments:
                          (default: None)
 
 use-manifest is not implemented yet
+
+usage: app.py from-arguments from-hd5-files [-h] --slide_location
+                                            SLIDE_LOCATION
+                                            [--slide_pattern SLIDE_PATTERN]
+                                            [--slide_idx SLIDE_IDX]
+                                            [--resize RESIZE [RESIZE ...]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+  --slide_location SLIDE_LOCATION
+                        Path to slide rootdir.
+                         (default: None)
+
+  --slide_pattern SLIDE_PATTERN
+                        '/' separated words describing the directory structure of the slide paths. Normally slides paths look like /path/to/slide/rootdir/subtype/slide.svs and if slide paths are /path/to/slide/rootdir/slide.svs then simply pass ''.
+                         (default: subtype)
+
+  --slide_idx SLIDE_IDX
+                        Positive Index for selecting part of slides instead of all of it. (useful for array jobs)
+                         (default: None)
+
+  --resize RESIZE [RESIZE ...]
+                        List for determining desired resize. For example, if the HDF5 file has [256, 512, 1024] patches, and we are only interested in 256, we set this flag. [256]
+                         (default: None)
 
 usage: app.py from-arguments use-directory [-h] --slide_location
                                            SLIDE_LOCATION
@@ -308,6 +335,7 @@ singularity run -B /projects/ovcare/classification -B /projects/ovcare/WSI singu
  --hd5_location path/to/folder \
  --num_patch_workers 1 \
  --store_extracted_patches \
+ --generate_patches_from_hd5_files \
  use-directory \
  --slide_location path/to/folder \
  --slide_pattern subtype \
