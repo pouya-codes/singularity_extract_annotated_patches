@@ -24,6 +24,7 @@ extract_annotated_patches:
             annotation_location: /projects/ovcare/classification/cchen/ml/data/test_ec/annotations
             slide_coords_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slide_coor
 ds.json
+			overlap_threshold: 0.76
             patch_size: 1024
             resize_size: [256]
 ```
@@ -31,7 +32,7 @@ ds.json
 In the SH file, you should bind the path to the slides if the slides in your slides directory specified by `--slide_location` is symlinked.
 
 ```
-singularity run     -B /projects/ovcare/classification/cchen     -B /projects/ovcare/WSI     extract_annotated_patches.sif     from-experiment-manifest /path/to/experiment.yaml 
+singularity run     -B /projects/ovcare/classification/cchen     -B /projects/ovcare/WSI     extract_annotated_patches.sif     from-experiment-manifest /path/to/experiment.yaml
 ```
 
 ## Usage
@@ -75,7 +76,7 @@ positional arguments:
     use-manifest        Use manifest file to locate slides.
                             A manifest JSON file contains keys 'patients', and optionally 'patient_regex' which is the regex string used to extract the patient from the slide name.
                             The key 'patients' which is a dictionary where each key is a patient ID and value is a list of slide paths for the slides corresponding to the patient.
-                        
+
                             {
                                 patient_regex: str|None,
                                 patients: {
@@ -123,7 +124,7 @@ positional arguments:
                                 Coordinates are a list of size 2 lists of numbers representing the x, y pixel coordinates.
                                 The [x, y] list represents the coordinates of the top left corner of the patch_size * patch_size extracted patch.
                                 Coordinates are indexed by slide name for the slide the patches are from, and annotation the patches are labeled with.
-                        
+
                                 {
                                     patch_size: int,
                                     coords: {
@@ -140,7 +141,7 @@ positional arguments:
 
     use-annotation      Specify patches to extract by annotation.
                                 If a slide is named 'VOA-1823A' then the annotation file for that slide is a text file named 'VOA-1823A.txt' with each line containing (i.e.):
-                        
+
                                 Tumor [Point: 84332.8046875, 68421.28125, Point: 84332.8046875, 68421.28125,...]
                                 Stroma [...]
 
@@ -182,6 +183,9 @@ optional arguments:
   --patch_size PATCH_SIZE
                         Patch size in pixels to extract from slide.
                          (default: 1024)
+  --overlap_threshold: OVERLAP_THRESHOLD
+  						Patches having overlapp above this value with the annotated pixels will be extracted.
+                         (default: 1.0)
 
   --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
                         List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.
@@ -200,4 +204,3 @@ required arguments:
                         Path to slide coords JSON file to save extracted patch coordinates.
                          (default: None)
 ```
-

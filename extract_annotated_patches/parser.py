@@ -123,5 +123,7 @@ def create_parser(parser):
                 help="List of patch sizes in pixels to resize the extracted patches and save. "
                 "Each size should be at most patch_size. "
                 "Default simply saves the extracted patch.")
+        parser_annotation.add_argument("--overlap_threshold", type=float, required=False,
+                default=1.0, help="Select at most max_slide_patches number of patches from each slide.")
         parser_annotation.add_argument("--max_slide_patches", type=int, required=False,
                 help="Select at most max_slide_patches number of patches from each slide.")

@@ -87,7 +87,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             if file.endswith(".txt"):
                 slide_name = utils.path_to_filename(file)
                 filepath = os.path.join(self.annotation_location, file)
-                slide_annotation[slide_name] = GroovyAnnotation(filepath, logger)
+                slide_annotation[slide_name] = GroovyAnnotation(filepath, self.overlap_threshold, logger)
         return slide_annotation
 
     def __init__(self, config):
@@ -112,6 +112,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         self.slide_coords_location = config.slide_coords_location
         if self.should_use_annotation:
             self.annotation_location = config.annotation_location
+            self.overlap_threshold = config.overlap_threshold
             self.slide_annotation = self.load_slide_annotation_lookup()
             self.patch_size = config.patch_size
             self.resize_sizes = config.resize_sizes
@@ -191,9 +192,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
             tile_x, tile_y, x, y = data
             label = self.slide_annotation[slide_name].points_to_label(
                     np.array([[x, y],
-                        [x+self.patch_size, y],
                         [x, y+self.patch_size],
-                        [x+self.patch_size, y+self.patch_size]]))
+                        [x+self.patch_size, y+self.patch_size],
+                        [x+self.patch_size, y]]))
             if not label:
                 """Skip unlabeled patches
                 """
