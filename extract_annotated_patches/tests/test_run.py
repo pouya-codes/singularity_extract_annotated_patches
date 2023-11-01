@@ -16,7 +16,7 @@ from extract_annotated_patches.tests import (
         PATCH_PATTERN, PATCH_DIR, SLIDE_DIR,
         create_slide_id, list_to_space_sep_str)
 
-@pytest.mark.skip(reason="")
+# @pytest.mark.skip(reason="")
 def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
     """
     TODO: test SlideCoordsMetadata more

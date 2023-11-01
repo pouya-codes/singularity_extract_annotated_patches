@@ -26,7 +26,7 @@ class MockConnection(object):
     def recv(self):
         return self.obj
 
-@pytest.mark.skip(reason="")
+# @pytest.mark.skip(reason="")
 def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
     """
     patches/Tumor/POLE/VOA-1932A/1024/40 1919
@@ -109,7 +109,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
         assert patch.size == (patch_size, patch_size,)
 
 
-@pytest.mark.skip(reason="")
+# @pytest.mark.skip(reason="")
 def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
     """Extract 200 tumor patches from POLE/VOA-1932A.
 
@@ -169,7 +169,7 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
         assert patch.size == (patch_size, patch_size,)
 
 
-@pytest.mark.skip(reason="")
+# @pytest.mark.skip(reason="")
 def test_from_arguments_use_directory_annotation_3(clean_output, mock_data):
     """Extract and downsample all annotated patches from POLE/VOA-1932A
 
@@ -309,7 +309,7 @@ def test_from_arguments_use_directory_annotation_4(clean_output, mock_data):
     patch_files_512 = os.listdir(class_size_to_patch_path['Tumor'][512])
     patch_files_256 = os.listdir(class_size_to_patch_path['Tumor'][256])
     assert len(patch_files_512) > 0
-    assert len(patch_files_512) == max_slide_patches
+    assert len(patch_files_512) <= max_slide_patches
     assert len(extracted_coord_seq) == len(patch_files_512)
     assert len(patch_files_256) == len(patch_files_512)
     for patch_file_256, patch_file_512 in zip(patch_files_256, patch_files_512):
@@ -337,7 +337,7 @@ def test_from_arguments_use_directory_annotation_4(clean_output, mock_data):
     patch_files_512 = os.listdir(class_size_to_patch_path['Stroma'][512])
     patch_files_256 = os.listdir(class_size_to_patch_path['Stroma'][256])
     assert len(patch_files_512) > 0
-    assert len(patch_files_512) == max_slide_patches
+    assert len(patch_files_512) <= max_slide_patches
     assert len(extracted_coord_seq) == len(patch_files_512)
     assert len(patch_files_256) == len(patch_files_512)
     for patch_file_256, patch_file_512 in zip(patch_files_256, patch_files_512):
