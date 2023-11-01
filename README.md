@@ -4,9 +4,9 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 11 June 2021 by Amirali
+Last Update: 20 July 2021 by Amirali
 Developer: Colin Chen
-Version: 1.3.2
+Version: 1.4
 ```
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -87,7 +87,72 @@ required arguments:
                         Path to root directory to save hd5 into.
                          (default: None)
 
-use-manifest is not implemented yet
+usage: app.py from-arguments use-manifest [-h] --patch_location PATCH_LOCATION
+                                          --manifest_location
+                                          MANIFEST_LOCATION
+                                          [--slide_idx SLIDE_IDX]
+                                          [--store_extracted_patches]
+                                          {use-slide-coords,use-annotation,use-entire-slide,use-mosaic}
+                                          ...
+
+positional arguments:
+  {use-slide-coords,use-annotation,use-entire-slide,use-mosaic}
+                        Specify which coordinates in the slides to extract.
+                                There are 3 ways of extracting patches: by slide_cords, by annotation, and by entire_slide.
+    use-slide-coords    Specify patches to extract using slide coordinates.
+                                A slide coords JSON file containing keys 'patch_size' and 'coords'.
+                                The key 'patch_size' gives the pixel width, height of the patch.
+                                Coordinates are a list of size 2 lists of numbers representing the x, y pixel coordinates.
+                                The [x, y] list represents the coordinates of the top left corner of the patch_size * patch_size extracted patch.
+                                Coordinates are indexed by slide name for the slide the patches are from, and annotation the patches are labeled with.
+                        
+                                {
+                                    patch_size: int,
+                                    coords: {
+                                        [slide name]: {
+                                            [label]: [
+                                                [int|float, int|float],
+                                                ...
+                                            ],
+                                            ...
+                                        },
+                                        ...
+                                    }
+                                }
+
+    use-annotation      Specify patches to extract by annotation.
+                                If a slide is named 'VOA-1823A' then the annotation file for that slide is a text file named 'VOA-1823A.txt' with each line containing (i.e.):
+                        
+                                Tumor [Point: 84332.8046875, 68421.28125, Point: 84332.8046875, 68421.28125,...]
+                                Stroma [...]
+
+    use-entire-slide    Extracting patches from the whole slide. In this way,
+                                both tumor and normal areas will be extracted.
+                                The label is called Mix.
+
+    use-mosaic          Selecting patches from the whole slide in an efficient way.
+                                In this way, first all patches will be clustered based on their RGB histogram.
+                                Then, in each cluster, another clustering will be applied for their coordiantes.
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+  --slide_idx SLIDE_IDX
+                        Positive Index for selecting part of slides instead of all of it. (useful for array jobs)
+                         (default: None)
+
+  --store_extracted_patches
+                        Whether or not save extracted patches as png files on the disk.
+                         (default: False)
+
+required arguments:
+  --patch_location PATCH_LOCATION
+                        Path to root directory to extract patches into.
+                         (default: None)
+
+  --manifest_location MANIFEST_LOCATION
+                        Path to manifest CSV file with three columns of slide, annotation, and subtype.
+                         (default: None)
 
 usage: app.py from-arguments from-hd5-files [-h] --slide_location
                                             SLIDE_LOCATION

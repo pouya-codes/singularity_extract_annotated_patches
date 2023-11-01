@@ -86,8 +86,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         """Get paths of slides that should be extracted.
         """
         if self.should_use_manifest:
-            # return self.patient_slides.slidepaths
-            raise NotImplementedError("use-manifest is not yet implemented")
+            return self.manifest['slide']
         elif self.should_use_directory or self.should_use_hd5_files:
             return utils.get_paths(self.slide_location, self.slide_pattern,
                     extensions=['tiff', 'tif', 'svs', 'scn'])
@@ -104,11 +103,23 @@ class AnnotatedPatchesExtractor(OutputMixin):
         dict of str: GroovyAnnotation
             Lookup table for slide region annotations from slide names.
         """
-        slide_annotation = { }
-        for file in os.listdir(self.annotation_location):
+        if self.should_use_manifest:
+            if 'annotation' not in self.manifest:
+                raise ValueError("There is no column named annotation in the manifest file.")
+            generator = self.manifest['annotation']
+        elif self.should_use_directory:
+            generator = os.listdir(self.annotation_location)
+        else:
+            raise NotImplementedError()
+
+        slide_annotation = {}
+        for file in generator:
             if file.endswith(".txt"):
                 slide_name = utils.path_to_filename(file)
-                filepath = os.path.join(self.annotation_location, file)
+                if self.should_use_manifest:
+                    filepath = file
+                else:
+                    filepath = os.path.join(self.annotation_location, file)
                 slide_annotation[slide_name] = GroovyAnnotation(filepath, self.annotation_overlap,
                                                                 self.patch_size, self.is_TMA, logger)
         return slide_annotation
@@ -122,10 +133,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
         self.load_method = config.load_method
         self.store_thumbnail = config.store_thumbnail
         if self.should_use_manifest:
-            # self.patch_location = config.patch_location
-            # self.manifest_location = config.manifest_location
-            # self.store_extracted_patches = config.store_extracted_patches
-            raise NotImplementedError("use-manifest is not yet implemented")
+            self.manifest = utils.read_manifest(config.manifest_location)
+            self.patch_location = config.patch_location
+            self.slide_idx = config.slide_idx
+            self.store_extracted_patches = config.store_extracted_patches
+            self.slide_coords_location = config.slide_coords_location
+            self.extract_method = config.extract_method
+            self.slide_coords_location = config.slide_coords_location
         elif self.should_use_hd5_files:
             self.slide_location = config.slide_location
             self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
@@ -143,7 +157,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
 
-        if self.should_use_directory:
+        if self.should_use_directory or self.should_use_manifest:
             if self.should_use_annotation:
                 self.annotation_location = config.annotation_location
                 self.annotation_overlap = config.annotation_overlap
@@ -469,8 +483,15 @@ class AnnotatedPatchesExtractor(OutputMixin):
         args = []
         for slide_path in cur_slide_paths:
             slide_name = utils.path_to_filename(slide_path)
-            slide_id = utils.create_patch_id(slide_path, self.slide_pattern)
-
+            if self.should_use_manifest:
+                if 'subtype' in self.manifest:
+                    idx = self.manifest['slide'].index(slide_path)
+                    subtype_ = self.manifest['subtype'][idx]
+                    slide_id = f"{subtype_}/{slide_name}"
+                else:
+                    slide_id = slide_name
+            else:
+                slide_id = utils.create_patch_id(slide_path, self.slide_pattern)
             def make_patch_path(class_name):
                 """Create patch path and cache it by size in resize_sizes using slide_id from method body.
                 """

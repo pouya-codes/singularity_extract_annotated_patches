@@ -4,9 +4,9 @@ echo """# Extract Annotated Patches
 
 \`\`\`
 Date Created: 22 July 2020
-Last Update: 11 June 2021 by Amirali
+Last Update: 20 July 2021 by Amirali
 Developer: Colin Chen
-Version: 1.3.2
+Version: 1.4
 \`\`\`
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -24,7 +24,7 @@ python app.py from-experiment-manifest -h >> README.md
 echo >> README.md
 python app.py from-arguments -h >> README.md
 echo >> README.md
-echo "use-manifest is not implemented yet" >> README.md
+python app.py from-arguments use-manifest -h >> README.md
 echo >> README.md
 python app.py from-arguments from-hd5-files -h >> README.md
 echo >> README.md

@@ -79,7 +79,11 @@ def create_parser(parser):
     parser_manifest_grp.add_argument("--patch_location", type=dir_path, required=True,
             help="Path to root directory to extract patches into.")
     parser_manifest_grp.add_argument("--manifest_location", type=file_path, required=True,
-            help="Path to manifest JSON file")
+            help="Path to manifest CSV file with three columns of slide, "
+            "annotation, and subtype.")
+    parser_manifest.add_argument("--slide_idx", type=positive_int,
+            help="Positive Index for selecting part of slides instead of all of it. "
+            "(useful for array jobs)")
     parser_manifest.add_argument("--store_extracted_patches", action='store_true',
             help="Whether or not save extracted patches as png files on the disk.")
 
@@ -148,8 +152,12 @@ def create_parser(parser):
         parser_annotation = subparsers_extract.add_parser("use-annotation",
                 help=help_annotation)
         parser_annotation_grp = parser_annotation.add_argument_group("required arguments")
-        parser_annotation_grp.add_argument("--annotation_location", type=dir_path, required=True,
-                help="Path to immediate directory containing slide's annotation TXTs.")
+        if subparser == parser_manifest:
+            parser_annotation.add_argument("--annotation_location", type=dir_path, required=False,
+                    help="Path to immediate directory containing slide's annotation TXTs.")
+        else:
+            parser_annotation_grp.add_argument("--annotation_location", type=dir_path, required=True,
+                    help="Path to immediate directory containing slide's annotation TXTs.")
         parser_annotation_grp.add_argument("--slide_coords_location", type=str, required=True,
                 help="Path to slide coords JSON file to save extracted patch coordinates.")
         parser_annotation.add_argument("--patch_size", type=int,
