@@ -24,7 +24,8 @@ extract_annotated_patches:
             annotation_location: /projects/ovcare/classification/cchen/ml/data/test_ec/annotations
             slide_coords_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slide_coor
 ds.json
-			overlap_threshold: 0.76
+			annotation_overlap: 0.5
+            patch_overlap: 0.8
             patch_size: 1024
             resize_size: [256]
 ```
@@ -183,9 +184,13 @@ optional arguments:
   --patch_size PATCH_SIZE
                         Patch size in pixels to extract from slide.
                          (default: 1024)
-  --overlap_threshold: OVERLAP_THRESHOLD
+  --annotation_overlap: ANNOTATION_OVERLAP
   						Patches having overlapp above this value with the annotated pixels will be extracted.
                          (default: 1.0)
+
+   --patch_overlap: ANNOTATION_OVERLAP
+  						Overlap between extracted patches.
+                         (default: 0.0)
 
   --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
                         List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.

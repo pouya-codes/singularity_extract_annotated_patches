@@ -87,7 +87,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             if file.endswith(".txt"):
                 slide_name = utils.path_to_filename(file)
                 filepath = os.path.join(self.annotation_location, file)
-                slide_annotation[slide_name] = GroovyAnnotation(filepath, self.overlap_threshold,
+                slide_annotation[slide_name] = GroovyAnnotation(filepath, self.annotation_overlap,
                                                                 self.patch_size, self.is_TMA, logger)
         return slide_annotation
 
@@ -113,7 +113,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
         self.slide_coords_location = config.slide_coords_location
         if self.should_use_annotation:
             self.annotation_location = config.annotation_location
-            self.overlap_threshold = config.overlap_threshold
+            self.annotation_overlap = config.annotation_overlap
+            self.patch_overlap = config.patch_overlap
             self.patch_size = config.patch_size
             self.is_TMA = config.is_TMA
             self.slide_annotation = self.load_slide_annotation_lookup()
@@ -186,10 +187,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
             os_slide = OpenSlide(slide_path)
         else:
             os_slide = Image.open(slide_path).convert('RGB')
-            os_slide = preprocess.expand(os_slide, self.patch_size, self.overlap_threshold)
+            os_slide = preprocess.expand(os_slide, self.patch_size, self.annotation_overlap)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         num_extracted = 0
-        for data in SlideCoordsExtractor(os_slide, self.patch_size,
+        for data in SlideCoordsExtractor(os_slide, self.patch_size, self.patch_overlap,
                                          shuffle=True, seed=self.seed,
                                          is_TMA=self.is_TMA):
             if self.max_slide_patches and num_extracted >= self.max_slide_patches:
@@ -213,7 +214,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
 
             patch = preprocess.extract(os_slide, x, y, self.patch_size, is_TMA=self.is_TMA)
             ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
-            if self.overlap_threshold < 0.35:
+            if self.annotation_overlap < 0.35:
                 blank_percent = 0.9
             else:
                 blank_percent = 0.75

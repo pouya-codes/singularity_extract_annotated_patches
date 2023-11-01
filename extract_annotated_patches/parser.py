@@ -125,7 +125,9 @@ def create_parser(parser):
                 "Default simply saves the extracted patch.")
         parser_annotation.add_argument("--is_TMA", action='store_true',
                 help="TMA cores are simple image instead of slide.")
-        parser_annotation.add_argument("--overlap_threshold", type=float, required=False,
-                default=1.0, help="Select at most max_slide_patches number of patches from each slide.")
+        parser_annotation.add_argument("--patch_overlap", type=float, required=False,
+                default=0, help="Overlap between extracted patches.")
+        parser_annotation.add_argument("--annotation_overlap", type=float, required=False,
+                default=1.0, help="Patches having overlapp above this value with the annotated pixels will be extracted.")
         parser_annotation.add_argument("--max_slide_patches", type=int, required=False,
                 help="Select at most max_slide_patches number of patches from each slide.")
