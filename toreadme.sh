@@ -4,9 +4,9 @@ echo """# Extract Annotated Patches
 
 \`\`\`
 Date Created: 22 July 2020
-Last Update: 18 May 2021 by Amirali
+Last Update: 18 May 2021 by Pouya
 Developer: Colin Chen
-Version: 1.2
+Version: 1.31
 \`\`\`
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -58,6 +58,7 @@ singularity run -B /projects/ovcare/classification -B /projects/ovcare/WSI singu
  --hd5_location path/to/folder \\
  --num_patch_workers 1 \\
  --store_extracted_patches \\
+ --generate_patches_from_hd5_files \\
  use-directory \\
  --slide_location path/to/folder \\
  --slide_pattern subtype \\

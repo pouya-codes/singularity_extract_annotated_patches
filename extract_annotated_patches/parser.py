@@ -34,6 +34,9 @@ def create_parser(parser):
     parser.add_argument("--store_extracted_patches", action='store_true',
             help="Whether or not save extracted patches as png files on the disk.")
 
+    parser.add_argument("--generate_patches_from_hd5_files", action='store_true',
+            help="Extracts and stores patches on the disk based on their coordinates at hd5 files")
+
     help_subparsers_load = """Specify how to load slides to extract.
     There are 2 ways of extracting slides: by manifest and by directory."""
     subparsers_load = parser.add_subparsers(dest='load_method',
