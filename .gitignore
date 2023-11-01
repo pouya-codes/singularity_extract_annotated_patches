@@ -4,6 +4,7 @@
 __pycache__/
 .vscode
 .pytest_cache
+extract_annotated_patches/.__init__.py.swp
 extract_annotated_patches/tests/outputs/
 extract_annotated_patches/tests/mock/slides/*
 submodule_cv/

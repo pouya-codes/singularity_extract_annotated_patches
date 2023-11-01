@@ -310,9 +310,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     p = mp.Process(target=self.extract_patch_by_slide_coords, args=args)
                 p.start()
                 processes.append(p)
+            coords_to_merge.extend(map(lambda x: x.recv(), recv_end_list))
             for p in processes:
                 p.join()
-            coords_to_merge.extend(map(lambda x: x.recv(), recv_end_list))
+            # coords_to_merge.extend(map(lambda x: x.recv(), recv_end_list))
 
         if self.should_use_annotation:
             """Merge slide coords
