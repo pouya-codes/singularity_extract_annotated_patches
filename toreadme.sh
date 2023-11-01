@@ -4,7 +4,7 @@ echo """# Extract Annotated Patches
 
 \`\`\`
 Date Created: 22 July 2020
-Last Update: 24 April 2021 by Amirali
+Last Update: 18 May 2021 by Amirali
 Developer: Colin Chen
 Version: 1.2
 \`\`\`
@@ -55,7 +55,9 @@ In order to increase the speed of extract_annotated_patches, We should run paral
 
 singularity run -B /projects/ovcare/classification -B /projects/ovcare/WSI singularity_extract_annotated_patches.sif from-arguments \\
  --patch_location path/to/folder \\
+ --hd5_location path/to/folder \\
  --num_patch_workers 1 \\
+ --store_extracted_patches \\
  use-directory \\
  --slide_location path/to/folder \\
  --slide_pattern subtype \\

@@ -22,6 +22,8 @@ def create_parser(parser):
     parser_grp = parser.add_argument_group("required arguments")
     parser_grp.add_argument("--patch_location", type=dir_path, required=True,
             help="Path to root directory to extract patches into.")
+    parser_grp.add_argument("--hd5_location", type=dir_path, required=True,
+            help="Path to root directory to save hd5 into.")
     parser.add_argument("--is_tumor", action='store_true',
             help="Only extract tumor patches. Default extracts tumor and normal patches.")
     parser.add_argument("--seed", type=int, default=default_seed,
@@ -29,6 +31,8 @@ def create_parser(parser):
     parser.add_argument("--num_patch_workers", type=int,
         help="Number of worker processes to multi-process patch extraction. "
         "Default sets the number of worker processes to the number of CPU processes.")
+    parser.add_argument("--store_extracted_patches", action='store_true',
+            help="Whether or not save extracted patches as png files on the disk.")
 
     help_subparsers_load = """Specify how to load slides to extract.
     There are 2 ways of extracting slides: by manifest and by directory."""
@@ -119,8 +123,6 @@ def create_parser(parser):
                 help="Path to immediate directory containing slide's annotation TXTs.")
         parser_annotation_grp.add_argument("--slide_coords_location", type=str, required=True,
                 help="Path to slide coords JSON file to save extracted patch coordinates.")
-        parser_annotation.add_argument("--save_png_files", action='store_true',
-                help="Weather or not save extracted patches as png files on the disk.")
         parser_annotation.add_argument("--patch_size", type=int,
                 default=default_patch_size,
                 help="Patch size in pixels to extract from slide.")

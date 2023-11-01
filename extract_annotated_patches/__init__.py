@@ -119,10 +119,11 @@ class AnnotatedPatchesExtractor(OutputMixin):
         TODO: fix import-annotations and export-annotations
         """
         self.patch_location = config.patch_location
+        self.hd5_location = config.hd5_location
         self.is_tumor = config.is_tumor
         self.seed = config.seed
         self.load_method = config.load_method
-        self.save_png_files = config.save_png_files
+        self.store_extracted_patches = config.store_extracted_patches
         if self.should_use_manifest:
             # self.manifest_location = config.manifest_location
             # self.patient_slides = .load(self.manifest_location)
@@ -265,17 +266,17 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and self.save_png_files:
+                    if resize_size == self.patch_size and self.store_extracted_patches:
                         patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        if self.save_png_files:
+                        if self.store_extracted_patches:
                             resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         asset_dict = {'paths': paths}
-        save_hdf5(os.path.join(self.patch_location, f"{slide_name}.h5"), asset_dict)
+        save_hdf5(os.path.join(self.hd5_location, f"{slide_name}.h5"), asset_dict)
         send_end.send(coords)
 
     def extract_patch_by_entire_slide(self, slide_path,
@@ -317,17 +318,17 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 label = "Mix"
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and self.save_png_files:
+                    if resize_size == self.patch_size and self.store_extracted_patches:
                         patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        if self.save_png_files:
+                        if self.store_extracted_patches:
                             resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         asset_dict = {'paths': paths}
-        save_hdf5(os.path.join(self.patch_location, f"{slide_name}.h5"), asset_dict)
+        save_hdf5(os.path.join(self.hd5_location, f"{slide_name}.h5"), asset_dict)
         send_end.send(coords)
 
     def extract_patch_by_mosaic(self, slide_path,
@@ -393,11 +394,11 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 label = "Mosaic"
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and self.save_png_files:
+                    if resize_size == self.patch_size and self.store_extracted_patches:
                         patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        if self.save_png_files:
+                        if self.store_extracted_patches:
                             resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
                 coords.add_coord(label, x, y)
@@ -405,7 +406,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
               f" of them contains tissue, and {dict_num_patch['selected']} are selected"
               f" for representing {slide_name}.")
         asset_dict = {'paths': paths}
-        save_hdf5(os.path.join(self.patch_location, f"{slide_name}.h5"), asset_dict)
+        save_hdf5(os.path.join(self.hd5_location, f"{slide_name}.h5"), asset_dict)
         send_end.send(coords)
 
     def produce_args(self, cur_slide_paths):
@@ -436,7 +437,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     size_patch_path[resize_size] = os.path.join(
                             self.patch_location, class_name, slide_id,
                             str(resize_size), str(self.get_magnification(resize_size)))
-                    if self.save_png_files:
+                    if self.store_extracted_patches:
                         os.makedirs(size_patch_path[resize_size], exist_ok=True)
                 return size_patch_path
 
