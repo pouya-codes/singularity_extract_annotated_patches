@@ -1,10 +1,17 @@
 # Extract Annotated Patches
+
+The Extract Annotated Patches project is a powerful tool for extracting specific patches from large biomedical images. This tool is highly configurable and can be used in a variety of contexts, including the extraction of patches from HD5 files, directories, or manifest files. The tool supports multiple methods for specifying the coordinates of the patches to be extracted, including slide coordinates, annotations, or the entire slide.
+
+The tool is command-line based and has different subcommands for different use cases. The tool uses a main argument to specify whether the command line arguments are sourced from an experiment manifest or from the command line. Each subcommand has its own set of arguments.
+
+## Running in Parallel
+
+To increase the speed of the `extract_annotated_patches`, parallel jobs can be run. This can be achieved by using the provided bash script file. This script uses SLURM for parallel job scheduling. The `--array` argument should be set to the value of `num_slides / num_patch_workers`. For the fastest execution, set `num_patch_workers=1`, then the number of arrays is `num_slides`.
+
 ### Usage ###
 ```
 
 usage: app.py [-h] {from-experiment-manifest,from-arguments} ...
-
-Extract annotated patches.
 
 positional arguments:
   {from-experiment-manifest,from-arguments}
