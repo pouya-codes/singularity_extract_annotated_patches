@@ -8,6 +8,7 @@ from submodule_utils.metadata.slide_coords import (
         SlideCoordsMetadata, CoordsMetadata)
 
 import extract_annotated_patches
+import extract_annotated_patches.parser
 from extract_annotated_patches import *
 from extract_annotated_patches.tests import (
         OUTPUT_DIR, OUTPUT_PATCH_DIR, ANNOTATION_DIR,
@@ -17,6 +18,7 @@ from extract_annotated_patches.tests import (
 def test_mock(annotated_slide_names, slide_paths, slide_path):
     """Do a reality check with mock, ...etc variables.
     """
+    #print(os.path.abspath(os.getcwd()))
     assert default_patch_size == 1024
     assert len(annotated_slide_names) >= 4
     assert 'VOA-1099A' in annotated_slide_names
@@ -52,17 +54,55 @@ def test_parse_args_1():
     assert config.extract_method == 'use-annotation'
     assert config.annotation_location == ANNOTATION_DIR
     assert config.patch_size == default_patch_size
-    assert config.resize_sizes == []
+    assert config.resize_sizes == None
     assert config.max_slide_patches == None
     ape = AnnotatedPatchesExtractor(config)
     assert not ape.should_use_manifest
     assert ape.should_use_directory
     assert ape.should_use_annotation
     assert not ape.should_use_slide_coords
-    # TODO: finish asserts
+    assert ape.resize_sizes == [default_patch_size]
+    assert ape.slide_pattern == utils.create_patch_pattern(default_slide_pattern)
 
 def test_parse_args_2():
-    pass
+    patch_size = 2048
+    resize_sizes = [512, 256]
+    max_slide_patches = 100
+    slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
+    args_str = f"""
+    from-arguments
+    --patch_location {OUTPUT_PATCH_DIR}
+    --is_tumor
+    use-directory
+    --slide_location {SLIDE_DIR}
+    use-annotation
+    --annotation_location {ANNOTATION_DIR}
+    --slide_coords_location {slide_coords_location}
+    --patch_size {patch_size}
+    --resize_sizes {' '.join(map(str, resize_sizes))}
+    --max_slide_patches {max_slide_patches}
+    """
+    parser = extract_annotated_patches.parser.create_parser()
+    config = parser.get_args(args_str.split())
+    assert config.is_tumor == True
+    assert config.seed == default_seed
+    assert config.load_method == 'use-directory'
+    assert config.slide_location == SLIDE_DIR
+    assert config.slide_pattern == default_slide_pattern
+    assert config.extract_method == 'use-annotation'
+    assert config.annotation_location == ANNOTATION_DIR
+    assert config.patch_size == patch_size
+    assert config.resize_sizes == resize_sizes
+    assert config.max_slide_patches == max_slide_patches
+    ape = AnnotatedPatchesExtractor(config)
+    assert not ape.should_use_manifest
+    assert ape.should_use_directory
+    assert ape.should_use_annotation
+    assert not ape.should_use_slide_coords
+    assert ape.patch_size == patch_size
+    assert ape.resize_sizes == resize_sizes
+    assert ape.slide_pattern == utils.create_patch_pattern(default_slide_pattern)
+    assert ape.max_slide_patches == max_slide_patches
 
 def test_get_slide_paths(slide_paths):
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
@@ -98,10 +138,17 @@ def test_load_slide_annotation_lookup(annotated_slide_names):
     assert sorted(annotated_slide_names) == sorted(slide_annotation.keys())
     for slide_name, annotation in slide_annotation.items():
         assert isinstance(annotation, GroovyAnnotation)
-        annotation_file = os.path.join(OUTPUT_DIR, f"{slide_name}.txt")
+        annotation_file = os.path.join(ANNOTATION_DIR, f"{slide_name}.txt")
         ga = GroovyAnnotation(annotation_file)
         assert sorted(ga.labels) == sorted(annotation.labels)
-        np.testing.assert_array_equal(ga.vertices, annotation.vertices)
+        for label in ga.labels:
+            expected_paths = ga.paths[label]
+            actual_paths = annotation.paths[label]
+            assert len(expected_paths) == len(actual_paths)
+            for expected_path, actual_path in zip(expected_paths, actual_paths):
+                expected = expected_path.vertices
+                actual = actual_path.vertices
+                np.testing.assert_array_equal(expected, actual)
 
 def test_produce_args_1(clean_output, slide_path):
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
@@ -132,12 +179,3 @@ def test_produce_args_1(clean_output, slide_path):
     assert os.path.isdir(class_size_to_patch_path['Stroma'][default_patch_size])
     assert os.path.isdir(class_size_to_patch_path['Tumor'][default_patch_size])
 
-class MockConnection(object):
-    def __init__(self):
-        self.obj = None
-
-    def send(self, obj):
-        self.obj = obj
-    
-    def recv(self, obj):
-        return self.obj

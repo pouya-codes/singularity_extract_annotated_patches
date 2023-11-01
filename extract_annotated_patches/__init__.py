@@ -56,7 +56,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
 
     @property
     def should_use_annotation(self):
-        return self.subcommand == 'use-annotation'
+        return self.extract_method == 'use-annotation'
 
     def get_slide_paths(self):
         """Get paths of slides that should be extracted.
@@ -99,7 +99,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             raise NotImplementedError("use-manifest is not yet implemented")
         elif self.should_use_directory:
             self.slide_location = config.slide_location
-            self.slide_pattern = config.slide_pattern
+            self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
         
@@ -179,7 +179,6 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """
                 break
-            patch, tile_loc, resized_patches = data
             tile_x, tile_y, x, y = data
             label = self.slide_annotation[slide_name].points_to_label(
                     np.array([[x, y],
@@ -200,8 +199,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
             if utils.image.preprocess.check_luminance(ndpatch):
                 """Save labeled forground patch
                 """
-                    patch_path = class_size_to_patch_path[label][resize_size]
                 for resize_size in self.resize_sizes:
+                    patch_path = class_size_to_patch_path[label][resize_size]
                     if resize_size == self.patch_size:
                         patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
                     else:

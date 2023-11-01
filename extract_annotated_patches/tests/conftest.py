@@ -8,6 +8,8 @@ from extract_annotated_patches.tests import (
         PATCH_PATTERN, PATCH_DIR, SLIDE_DIR,
         create_slide_id)
 
+CLEAN_AFTER_RUN=False
+
 @pytest.fixture
 def clean_output():
     """Get the directory to save test outputs. Cleans the output directory before and after each test.
@@ -16,11 +18,13 @@ def clean_output():
         shutil.rmtree(OUTPUT_PATCH_DIR)
     for file in os.listdir(OUTPUT_DIR):
         os.unlink(os.path.join(OUTPUT_DIR, file))
+    os.mkdir(OUTPUT_PATCH_DIR)
     yield None
-    if os.path.isdir(patch_dir):
-        shutil.rmtree(patch_dir)
-    for file in os.listdir(OUTPUT_DIR):
-        os.unlink(os.path.join(OUTPUT_DIR, file))
+    if CLEAN_AFTER_RUN:
+        if os.path.isdir(patch_dir):
+            shutil.rmtree(patch_dir)
+        for file in os.listdir(OUTPUT_DIR):
+            os.unlink(os.path.join(OUTPUT_DIR, file))
 
 @pytest.fixture(scope='module')
 def annotated_slide_names():
@@ -28,7 +32,7 @@ def annotated_slide_names():
 
 @pytest.fixture(scope='module')
 def slide_paths():
-    slide_paths = utils.get_paths(SLIDE_DIR,
+    return utils.get_paths(SLIDE_DIR,
             utils.create_patch_pattern(default_slide_pattern),
             extensions=['tiff'])
 

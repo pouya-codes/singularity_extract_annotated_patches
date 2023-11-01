@@ -8,6 +8,7 @@ from submodule_utils.metadata.slide_coords import (
         SlideCoordsMetadata, CoordsMetadata)
 
 import extract_annotated_patches
+import extract_annotated_patches.parser
 from extract_annotated_patches import *
 from extract_annotated_patches.tests import (
         OUTPUT_DIR, OUTPUT_PATCH_DIR, ANNOTATION_DIR,
@@ -24,7 +25,10 @@ class MockConnection(object):
     def recv(self, obj):
         return self.obj
 
-def extract_patch_by_annotation(slide_path):
+def test_extract_1(clean_output, slide_path):
+    """
+    Last run extracted 3286 patches
+    """
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
     args_str = f"""
     from-arguments

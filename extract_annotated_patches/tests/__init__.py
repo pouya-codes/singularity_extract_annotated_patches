@@ -23,10 +23,10 @@ from extract_annotated_patches import *
 
 OUTPUT_DIR = 'extract_annotated_patches/tests/outputs'
 OUTPUT_PATCH_DIR = os.path.join(OUTPUT_DIR, "patches")
-ANNOTATION_DIR = 'auto_annotate/tests/mock/annotations'
+ANNOTATION_DIR = 'extract_annotated_patches/tests/mock/annotations'
 PATCH_PATTERN = 'annotation/subtype/slide/patch_size/magnification'
-PATCH_DIR = 'auto_annotate/tests/mock/patches'
-SLIDE_DIR = 'auto_annotate/tests/mock/slides'
+PATCH_DIR = 'extract_annotated_patches/tests/mock/patches'
+SLIDE_DIR = 'extract_annotated_patches/tests/mock/slides'
 
 create_slide_id = lambda path: utils.create_patch_id(path,
         utils.create_patch_pattern(default_slide_pattern))
