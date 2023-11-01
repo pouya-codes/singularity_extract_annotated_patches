@@ -6,4 +6,6 @@ __pycache__/
 .pytest_cache
 extract_annotated_patches/tests/outputs/
 extract_annotated_patches/tests/mock/slides/*
+submodule_cv/
 submodule_utils/
+.idea/
