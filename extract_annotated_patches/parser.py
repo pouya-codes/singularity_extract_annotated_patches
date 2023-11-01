@@ -63,17 +63,16 @@ def create_parser(parser):
 
 
     help_manifest = """Use manifest file to locate slides.
-    a CSV file with minimum of 1 column and maximum of 3 columns. The name of columns
-    should be among ['slide', 'annotation', 'subtype']. slide must be one of the columns.
-    }"""
+        a CSV file with minimum of 4 column and maximum of 6 columns. The name of columns
+        should be among ['origin', 'patient_id', 'slide_id', 'slide_path', 'annotation_path', 'subtype'].
+        origin, slide_id, patient_id must be one of the columns."""
     parser_manifest = subparsers_load.add_parser("use-manifest",
             help=help_manifest)
     parser_manifest_grp = parser_manifest.add_argument_group("required arguments")
     parser_manifest_grp.add_argument("--patch_location", type=dir_path, required=True,
             help="Path to root directory to extract patches into.")
     parser_manifest_grp.add_argument("--manifest_location", type=file_path, required=True,
-            help="Path to manifest CSV file with three columns of slide, "
-            "annotation, and subtype.")
+            help="Path to manifest CSV file.")
     parser_manifest.add_argument("--slide_idx", type=positive_int,
             help="Positive Index for selecting part of slides instead of all of it. "
             "(useful for array jobs)")
@@ -228,3 +227,15 @@ def create_parser(parser):
                 help="List of patch sizes in pixels to resize the extracted patches and save. "
                 "Each size should be at most patch_size. "
                 "Default simply saves the extracted patch.")
+
+        # insert common things in here!
+        subparsers_radius_list = [parser_annotation, parser_entire, parser_mosaic]
+
+        for subparser in subparsers_radius_list:
+            subparser.add_argument("--use_radius", action='store_true',
+                help="Activating this subparser will enable extracting "
+                "all patches within radius of the coordinate.")
+            subparser.add_argument("--radius", type=int, default=1,
+                help="From each selected coordinate, all its neighbours will be extracted. "
+                "This number will be multiplied by the patch size."
+                "Note: In use-annotation, the number will be multiplied*stride.")

@@ -4,9 +4,9 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 20 July 2021 by Amirali
+Last Update: 29 July 2021 by Amirali
 Developer: Colin Chen
-Version: 1.4
+Version: 1.5
 ```
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -55,9 +55,9 @@ positional arguments:
     from-hd5-files      uses pre created hd5 files located at hd5_location to create and store images in patch_location
 
     use-manifest        Use manifest file to locate slides.
-                            a CSV file with minimum of 1 column and maximum of 3 columns. The name of columns
-                            should be among ['slide', 'annotation', 'subtype']. slide must be one of the columns.
-                            }
+                                a CSV file with minimum of 4 column and maximum of 6 columns. The name of columns
+                                should be among ['origin', 'patient_id', 'slide_id', 'slide_path', 'annotation_path', 'subtype'].
+                                origin, slide_id, patient_id must be one of the columns.
 
     use-directory       Use a rootdir to locate slides.
                             It is expected that slide paths have the structure '/path/to/rootdir/slide_pattern/slide_name.extension' where slide_pattern is usually 'subtype'. Patient IDs are extrapolated from slide_name using known, hardcoded regex.
@@ -144,7 +144,7 @@ required arguments:
                          (default: None)
 
   --manifest_location MANIFEST_LOCATION
-                        Path to manifest CSV file with three columns of slide, annotation, and subtype.
+                        Path to manifest CSV file.
                          (default: None)
 
 usage: app.py from-arguments from-hd5-files [-h] --slide_location
@@ -272,6 +272,8 @@ usage: app.py from-arguments use-directory use-annotation [-h]
                                                           [--patch_overlap PATCH_OVERLAP]
                                                           [--annotation_overlap ANNOTATION_OVERLAP]
                                                           [--max_slide_patches MAX_SLIDE_PATCHES]
+                                                          [--use_radius]
+                                                          [--radius RADIUS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -302,6 +304,12 @@ optional arguments:
                         Select at most max_slide_patches number of patches from each slide.
                          (default: None)
 
+  --use_radius          Activating this subparser will enable extracting all patches within radius of the coordinate.
+                         (default: False)
+
+  --radius RADIUS       From each selected coordinate, all its neighbours will be extracted. This number will be multiplied by the patch size.Note: In use-annotation, the number will be multiplied*stride.
+                         (default: 1)
+
 required arguments:
   --annotation_location ANNOTATION_LOCATION
                         Path to immediate directory containing slide's annotation TXTs.
@@ -315,7 +323,8 @@ usage: app.py from-arguments use-directory use-entire-slide
        [-h] --slide_coords_location SLIDE_COORDS_LOCATION
        [--patch_size PATCH_SIZE] [--stride STRIDE]
        [--resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]]
-       [--max_slide_patches MAX_SLIDE_PATCHES]
+       [--max_slide_patches MAX_SLIDE_PATCHES] [--use_radius]
+       [--radius RADIUS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -335,6 +344,12 @@ optional arguments:
                         Select at most max_slide_patches number of patches from each slide.
                          (default: None)
 
+  --use_radius          Activating this subparser will enable extracting all patches within radius of the coordinate.
+                         (default: False)
+
+  --radius RADIUS       From each selected coordinate, all its neighbours will be extracted. This number will be multiplied by the patch size.Note: In use-annotation, the number will be multiplied*stride.
+                         (default: 1)
+
 required arguments:
   --slide_coords_location SLIDE_COORDS_LOCATION
                         Path to slide coords JSON file to save extracted patch coordinates.
@@ -349,6 +364,8 @@ usage: app.py from-arguments use-directory use-mosaic [-h]
                                                       [--percentage PERCENTAGE]
                                                       [--stride STRIDE]
                                                       [--resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]]
+                                                      [--use_radius]
+                                                      [--radius RADIUS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -375,6 +392,12 @@ optional arguments:
   --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
                         List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.
                          (default: None)
+
+  --use_radius          Activating this subparser will enable extracting all patches within radius of the coordinate.
+                         (default: False)
+
+  --radius RADIUS       From each selected coordinate, all its neighbours will be extracted. This number will be multiplied by the patch size.Note: In use-annotation, the number will be multiplied*stride.
+                         (default: 1)
 
 required arguments:
   --slide_coords_location SLIDE_COORDS_LOCATION

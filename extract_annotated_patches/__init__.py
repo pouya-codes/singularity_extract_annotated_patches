@@ -86,7 +86,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         """Get paths of slides that should be extracted.
         """
         if self.should_use_manifest:
-            return self.manifest['slide']
+            return self.manifest['slide_path']
         elif self.should_use_directory or self.should_use_hd5_files:
             return utils.get_paths(self.slide_location, self.slide_pattern,
                     extensions=['tiff', 'tif', 'svs', 'scn'])
@@ -104,9 +104,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
             Lookup table for slide region annotations from slide names.
         """
         if self.should_use_manifest:
-            if 'annotation' not in self.manifest:
+            if 'annotation_path' not in self.manifest:
                 raise ValueError("There is no column named annotation in the manifest file.")
-            generator = self.manifest['annotation']
+            generator = self.manifest['annotation_path']
         elif self.should_use_directory:
             generator = os.listdir(self.annotation_location)
         else:
@@ -169,11 +169,15 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 self.resize_sizes = config.resize_sizes
                 self.__resize_sizes = config.resize_sizes
                 self.max_slide_patches = config.max_slide_patches
+                self.use_radius = config.use_radius
+                self.radius = config.radius
             elif self.should_use_entire_slide:
                 self.stride = config.stride
                 self.patch_size = config.patch_size
                 self.resize_sizes = config.resize_sizes
                 self.max_slide_patches = config.max_slide_patches
+                self.use_radius = config.use_radius
+                self.radius = config.radius
             elif self.should_use_mosaic:
                 self.stride = config.stride
                 self.patch_size = config.patch_size
@@ -181,6 +185,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 self.resize_sizes = config.resize_sizes
                 self.n_clusters = config.n_clusters
                 self.percentage = config.percentage
+                self.use_radius = config.use_radius
+                self.radius = config.radius
             elif self.should_use_slide_coords:
                 self.slide_coords_metadata = SlideCoordsMetadata.load(self.slide_coords_location)
                 self.patch_size = self.slide_coords_metadata.patch_size
@@ -253,6 +259,42 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     resized_patch = preprocess.resize(patch, resize_size)
                     resized_patch.save(save_location)
 
+    def extract_(self, os_slide, label, paths, x, y, class_size_to_patch_path,
+                 is_TMA=False, check_background=False):
+        """ Had to ceate this function for radius patch extraction
+        """
+        patch = preprocess.extract(os_slide, x, y, self.patch_size, is_TMA=is_TMA)
+        ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
+        check = utils.image.preprocess.check_luminance(ndpatch)
+        if check_background:
+            return check
+        if check:
+            for resize_size in self.resize_sizes:
+                patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
+                paths.append(patch_path)
+                if self.store_extracted_patches:
+                    if resize_size == self.patch_size:
+                        patch.save(os.path.join(patch_path))
+                    else:
+                        resized_patch = preprocess.resize(patch, resize_size)
+                        resized_patch.save(os.path.join(patch_path))
+        return paths, check
+
+    def check_label(self, slide_name, x, y):
+        label = self.slide_annotation[slide_name].points_to_label(
+                np.array([[x, y],
+                    [x, y+self.patch_size],
+                    [x+self.patch_size, y+self.patch_size],
+                    [x+self.patch_size, y]]))
+        if not label:
+            """Skip unlabeled patches
+            """
+            return label, False
+        if self.is_tumor and label != BinaryEnum(1).name:
+            """Skip non-tumor patch if is_tumor is set.
+            """
+            return label, False
+        return label, True
 
     def extract_patch_by_annotation(self, slide_path,
             class_size_to_patch_path, send_end):
@@ -289,41 +331,32 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 break
             tile_x, tile_y, x, y = data
-            label = self.slide_annotation[slide_name].points_to_label(
-                    np.array([[x, y],
-                        [x, y+self.patch_size],
-                        [x+self.patch_size, y+self.patch_size],
-                        [x+self.patch_size, y]]))
-            if not label:
-                """Skip unlabeled patches
-                """
-                continue
-            if self.is_tumor and label != BinaryEnum(1).name:
-                """Skip non-tumor patch if is_tumor is set.
-                """
+            label, is_label = self.check_label(slide_name, x, y)
+            if not is_label:
                 continue
 
-            patch = preprocess.extract(os_slide, x, y, self.patch_size, is_TMA=self.is_TMA)
-            ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
-            if self.annotation_overlap < 0.35:
-                blank_percent = 0.9
+            if self.use_radius:
+                stride = int((1-self.patch_overlap)*self.patch_size)
+                size   = os_slide.dimensions if not self.is_TMA else os_slide.size
+                Coords = utils.get_circular_coordinates(self.radius, x, y, stride,
+                                            size, self.patch_size)
             else:
-                blank_percent = 0.75
-            check = utils.image.preprocess.check_luminance(ndpatch, blank_percent=blank_percent)
-            if check:
-                """Save labeled forground patch
-                """
-                for resize_size in self.resize_sizes:
-                    patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    paths.append(patch_path)
-                    if self.store_extracted_patches:
-                        if resize_size == self.patch_size:
-                            patch.save(os.path.join(patch_path))
-                        else:
-                            resized_patch = preprocess.resize(patch, resize_size)
-                            resized_patch.save(os.path.join(patch_path))
-                num_extracted += 1
-                coords.add_coord(label, x, y)
+                Coords = [(x, y)]
+            # check main image; if it is background, skip it
+            check = self.extract_(os_slide, label, paths, x, y, class_size_to_patch_path,
+                                  is_TMA=self.is_TMA, check_background=True)
+            if not check:
+                continue
+            for coord in Coords:
+                x_, y_ = coord
+                label, is_label = self.check_label(slide_name, x_, y_)
+                if not is_label:
+                    continue
+                paths, check = self.extract_(os_slide, label, paths, x_, y_,
+                                             class_size_to_patch_path, is_TMA=self.is_TMA)
+                if check:
+                    num_extracted += 1
+                    coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
             PlotThumbnail(slide_name, os_slide, hd5_file_path, self.slide_annotation[slide_name])
@@ -351,6 +384,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         num_extracted = 0
         paths = []
+        label = 'Mix'
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
         for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
                                          shuffle=False, seed=self.seed,
@@ -360,24 +394,25 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 break
             tile_x, tile_y, x, y = data
-            patch = preprocess.extract(os_slide, x, y, self.patch_size)
-            ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
-            check = utils.image.preprocess.check_luminance(ndpatch)
-            if check:
-                """Save labeled forground patch
-                """
-                label = "Mix"
-                for resize_size in self.resize_sizes:
-                    patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    paths.append(patch_path)
-                    if self.store_extracted_patches:
-                        if resize_size == self.patch_size:
-                            patch.save(os.path.join(patch_path))
-                        else:
-                            resized_patch = preprocess.resize(patch, resize_size)
-                            resized_patch.save(os.path.join(patch_path))
-                num_extracted += 1
-                coords.add_coord(label, x, y)
+            if self.use_radius:
+                # stride = int((1-self.patch_overlap)*self.patch_size)
+                stride = self.patch_size
+                Coords = utils.get_circular_coordinates(self.radius, x, y, stride,
+                                            os_slide.dimensions, self.patch_size)
+            else:
+                Coords = [(x, y)]
+            # check main image; if it is background, skip it
+            check = self.extract_(os_slide, label, paths, x, y, class_size_to_patch_path,
+                                  check_background=True)
+            if not check:
+                continue
+            for coord in Coords:
+                x_, y_ = coord
+                paths, check = self.extract_(os_slide, label, paths, x_, y_,
+                                             class_size_to_patch_path)
+                if check:
+                    num_extracted += 1
+                    coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
             PlotThumbnail(slide_name, os_slide, hd5_file_path, None)
@@ -404,7 +439,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
         os_slide = OpenSlide(slide_path)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         dict_hist_coord = {'hist': [], 'coords': []}
-        dict_num_patch = {'total': 0, 'tissue': 0, 'selected': 0}
+        dict_num_patch = {'total': 0, 'tissue': 0, 'selected': 0, 'radius': 0}
+        label = "Mosaic"
 
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
         for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
@@ -444,21 +480,25 @@ class AnnotatedPatchesExtractor(OutputMixin):
             for idx_ in final_idx:
                 dict_num_patch['selected'] += 1
                 x, y = selected_coords[idx_]
-                patch = preprocess.extract(os_slide, x, y, self.patch_size)
-                label = "Mosaic"
-                for resize_size in self.resize_sizes:
-                    patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    paths.append(patch_path)
-                    if self.store_extracted_patches:
-                        if resize_size == self.patch_size:
-                            patch.save(os.path.join(patch_path))
-                        else:
-                            resized_patch = preprocess.resize(patch, resize_size)
-                            resized_patch.save(os.path.join(patch_path))
-                coords.add_coord(label, x, y)
+                if self.use_radius:
+                    stride = self.patch_size
+                    Coords = utils.get_circular_coordinates(self.radius, x, y, stride,
+                                                os_slide.dimensions, self.patch_size)
+                else:
+                    Coords = [(x, y)]
+                for coord in Coords:
+                    x_, y_ = coord
+                    paths, check = self.extract_(os_slide, label, paths, x_, y_,
+                                                 class_size_to_patch_path)
+                    if check:
+                        dict_num_patch['radius'] += 1
+                        coords.add_coord(label, x_, y_)
         print(f"From {dict_num_patch['total']} total patches, {dict_num_patch['tissue']} "
               f" of them contains tissue, and {dict_num_patch['selected']} are selected"
               f" for representing {slide_name}.")
+        if self.use_radius:
+            print(f"In total, {dict_num_patch['radius']} are extracted because of "
+                  "using radius option!")
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
             PlotThumbnail(slide_name, os_slide, hd5_file_path, None)
@@ -485,7 +525,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             slide_name = utils.path_to_filename(slide_path)
             if self.should_use_manifest:
                 if 'subtype' in self.manifest:
-                    idx = self.manifest['slide'].index(slide_path)
+                    idx = self.manifest['slide_path'].index(slide_path)
                     subtype_ = self.manifest['subtype'][idx]
                     slide_id = f"{subtype_}/{slide_name}"
                 else:
