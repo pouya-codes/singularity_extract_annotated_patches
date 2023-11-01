@@ -110,6 +110,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         elif self.should_use_directory:
             self.slide_location = config.slide_location
             self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
+            self.slide_idx = config.slide_idx
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
 
@@ -365,6 +366,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
             logger.info(f"Number of CPU processes of {self.n_process} is too high. Setting to {self.MAX_N_PROCESS}")
             self.n_process = self.MAX_N_PROCESS
         logger.info(f"Number of CPU processes: {self.n_process}")
+        if self.slide_idx is not None:
+            self.slide_paths = utils.select_slides(self.slide_paths, self.slide_idx, self.n_process)
         n_slides = len(self.slide_paths)
         coords_to_merge = []
         prefix = "Extracting from slides: "

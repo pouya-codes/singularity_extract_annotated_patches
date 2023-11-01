@@ -6,7 +6,7 @@ from submodule_utils.manifest.arguments import manifest_arguments
 from submodule_utils.arguments import (
         AIMArgumentParser,
         dir_path, file_path, dataset_origin, balance_patches_options,
-        str_kv, int_kv, subtype_kv, make_dict,
+        str_kv, int_kv, subtype_kv, make_dict, positive_int,
         ParseKVToDictAction, CustomHelpFormatter)
 from extract_annotated_patches import *
 
@@ -61,6 +61,9 @@ def create_parser(parser):
     parser_directory_grp = parser_directory.add_argument_group("required arguments")
     parser_directory_grp.add_argument("--slide_location", type=dir_path, required=True,
             help="Path to slide rootdir.")
+    parser_directory.add_argument("--slide_idx", type=positive_int,
+            help="Positive Index for selecting part of slides instead of all of it. "
+            "(useful for array jobs)")
     parser_directory.add_argument("--slide_pattern", type=str,
             default='subtype',
             help="'/' separated words describing the directory structure of the "

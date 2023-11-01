@@ -89,6 +89,7 @@ use-manifest is not implemented yet
 
 usage: app.py from-arguments use-directory [-h] --slide_location
                                            SLIDE_LOCATION
+                                           [--slide_idx SLIDE_IDX]
                                            [--slide_pattern SLIDE_PATTERN]
                                            {use-slide-coords,use-annotation,use-entire-slide}
                                            ...
@@ -130,6 +131,10 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+
+  --slide_idx SLIDE_IDX
+                        Positive Index for selecting part of slides instead of all of it. (useful for array jobs)
+                         (default: None)
 
   --slide_pattern SLIDE_PATTERN
                         '/' separated words describing the directory structure of the slide paths. Normally slides paths look like /path/to/slide/rootdir/subtype/slide.svs and if slide paths are /path/to/slide/rootdir/slide.svs then simply pass ''.
@@ -227,4 +232,39 @@ required arguments:
                         Path to slide coords JSON file to save extracted patch coordinates.
                          (default: None)
 ```
+
+
+
+In order to increase the speed of extract_annotated_patches, We should run parallel jobs. In order to achieve this, you should use this bash script file:
+```
+#!/bin/bash
+#SBATCH --job-name Patch Extraction
+#SBATCH --cpus-per-task 1
+#SBATCH --array=1-<num_slides>
+#SBATCH --output path/to/folder/%a.out
+#SBATCH --error path/to/folder/%a.err
+#SBATCH --workdir /projects/ovcare/classification/singularity_modules/singularity_extract_annotated_patches
+#SBATCH --mail-type=FAIL
+#SBATCH --mail-user=<email>
+#SBATCH -p upgrade
+
+singularity run -B /projects/ovcare/classification -B /projects/ovcare/WSI singularity_extract_annotated_patches.sif from-arguments \
+ --patch_location path/to/folder \
+ --num_patch_workers 1 \
+ use-directory \
+ --slide_location path/to/folder \
+ --slide_pattern subtype \
+ --slide_idx $SLURM_ARRAY_TASK_ID \
+ use-entire-slide \
+ --slide_coords_location path/to/file \
+ --patch_size 2048 \
+ --stride 2000 \
+ --resize_sizes 512 \
+ # --max_slide_patches 10
+
+
+```
+
+1. The number of arrays should be set to value of `num_slides / num_patch_workers`.
+2. For fastest way, set the `num_patch_workers=1`, then number of arrays is `num_slides`.
 
