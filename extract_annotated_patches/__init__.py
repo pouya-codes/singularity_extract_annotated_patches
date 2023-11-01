@@ -381,7 +381,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 break
             tile_x, tile_y, x, y = data
-            if self.use_mask:
+            if self.use_mask and slide_name in self.mask:
                 check_tissue = self.check_tissue(slide_name, x, y)
                 if not check_tissue:
                     continue
@@ -403,7 +403,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 continue
             for coord in Coords:
                 x_, y_ = coord
-                if self.use_mask:
+                if self.use_mask and slide_name in self.mask:
                     check_tissue = self.check_tissue(slide_name, x_, y_)
                     if not check_tissue:
                         continue
@@ -417,7 +417,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
-            mask = self.mask[slide_name] if self.use_mask else None
+            mask = self.mask[slide_name] if self.use_mask and slide_name in self.mask else None
             PlotThumbnail(slide_name, os_slide, hd5_file_path, self.slide_annotation[slide_name], mask=mask)
         send_end.send(coords)
 
@@ -453,7 +453,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 break
             tile_x, tile_y, x, y = data
-            if self.use_mask:
+            if self.use_mask and slide_name in self.mask:
                 check_tissue = self.check_tissue(slide_name, x, y)
                 if not check_tissue:
                     continue
@@ -471,7 +471,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 continue
             for coord in Coords:
                 x_, y_ = coord
-                if self.use_mask:
+                if self.use_mask and slide_name in self.mask:
                     check_tissue = self.check_tissue(slide_name, x_, y_)
                     if not check_tissue:
                         continue
@@ -482,7 +482,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     coords.add_coord(label, x_, y_)
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
-            mask = self.mask[slide_name] if self.use_mask else None
+            mask = self.mask[slide_name] if self.use_mask and slide_name in self.mask else None
             PlotThumbnail(slide_name, os_slide, hd5_file_path, None, mask=mask)
         send_end.send(coords)
 
@@ -516,7 +516,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                                          is_TMA=False, stride=self.stride):
 
             tile_x, tile_y, x, y = data
-            if self.use_mask:
+            if self.use_mask and slide_name in self.mask:
                 check_tissue = self.check_tissue(slide_name, x, y)
                 if not check_tissue:
                     continue
@@ -560,7 +560,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     Coords = [(x, y)]
                 for coord in Coords:
                     x_, y_ = coord
-                    if self.use_mask:
+                    if self.use_mask and slide_name in self.mask:
                         check_tissue = self.check_tissue(slide_name, x_, y_)
                         if not check_tissue:
                             continue
@@ -577,7 +577,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                   "using radius option!")
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         if self.store_thumbnail:
-            mask = self.mask[slide_name] if self.use_mask else None
+            mask = self.mask[slide_name] if self.use_mask and slide_name in self.mask else None
             PlotThumbnail(slide_name, os_slide, hd5_file_path, None, mask=mask)
         send_end.send(coords)
 
