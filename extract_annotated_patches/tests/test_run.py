@@ -40,11 +40,12 @@ def test_run(clean_output, mock_data):
 
         """Test Tumor patches
         """
-        extracted_coord_seq = scm.get_slide(slide_name).get_topleft_coords('Tumor')
+        extracted_coord_seq = list(scm.get_slide(slide_name).get_topleft_coords('Tumor'))
         patch_dir = f"{OUTPUT_PATCH_DIR}/Tumor/{slide_id}/1024/40"
         patch_files = os.listdir(patch_dir)
         assert len(patch_files) > 0
         assert len(patch_files) <= int(area['Tumor'] / (1024**2))
+        assert len(extracted_coord_seq) == len(patch_files)
         for patch_file in patch_files:
             patch_name = utils.path_to_filename(patch_file)
             x, y = patch_name.split('_')
@@ -63,6 +64,7 @@ def test_run(clean_output, mock_data):
         patch_files = os.listdir(patch_dir)
         assert len(patch_files) > 0
         assert len(patch_files) <= int(area['Stroma'] / (1024**2))
+        assert len(extracted_coord_seq) == len(patch_files)
         for patch_file in patch_files:
             patch_name = utils.path_to_filename(patch_file)
             x, y = patch_name.split('_')
