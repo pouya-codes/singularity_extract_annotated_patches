@@ -27,6 +27,9 @@ def create_parser(parser):
             help="Only extract tumor patches. Default extracts tumor and normal patches.")
     parser.add_argument("--seed", type=int, default=default_seed,
             help="Seed for random shuffle.")
+    parser.add_argument("--num_patch_workers", type=int, required=False,
+        help="Number of worker processes to multi-process patch extraction. "
+        "Default sets the number of worker processes to the number of CPU processes.")
 
     help_subparsers_load = """Specify how to load slides to extract.
     There are 2 ways of extracting slides: by manifest and by directory."""
