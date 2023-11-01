@@ -15,7 +15,7 @@ from extract_annotated_patches.tests import (
         PATCH_PATTERN, PATCH_DIR, SLIDE_DIR,
         create_slide_id)
 
-def test_mock(annotated_slide_names, slide_paths, slide_path):
+def test_mock(annotated_slide_names, slide_paths, mock_data):
     """Do a reality check with mock, ...etc variables.
     """
     #print(os.path.abspath(os.getcwd()))
@@ -31,7 +31,7 @@ def test_mock(annotated_slide_names, slide_paths, slide_path):
     assert 'p53abn/VOA-3088B' in slide_ids
     assert 'p53wt/VOA-3266C' in slide_ids
     assert 'POLE/VOA-1932A' in slide_ids
-    assert create_slide_id(slide_path) == 'MMRd/VOA-1099A'
+    assert 'VOA-1099A' in mock_data
 
 def test_parse_args_1():
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
@@ -144,13 +144,15 @@ def test_load_slide_annotation_lookup(annotated_slide_names):
         for label in ga.labels:
             expected_paths = ga.paths[label]
             actual_paths = annotation.paths[label]
+            assert len(expected_paths) > 0
             assert len(expected_paths) == len(actual_paths)
             for expected_path, actual_path in zip(expected_paths, actual_paths):
                 expected = expected_path.vertices
                 actual = actual_path.vertices
                 np.testing.assert_array_equal(expected, actual)
 
-def test_produce_args_1(clean_output, slide_path):
+def test_produce_args_1(clean_output, mock_data):
+    slide_path = mock_data['VOA-1099A']['slide_path']
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
     args_str = f"""
     from-arguments

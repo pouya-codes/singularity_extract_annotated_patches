@@ -14,7 +14,6 @@ auto_annotate/tests/mock/slides
 auto_annotate/tests/mock/annotations
     (2) set the path of training log for the binary T/N model to log_file_location
 """
-
 import os
 
 import submodule_utils as utils

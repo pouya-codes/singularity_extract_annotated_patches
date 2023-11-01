@@ -2,6 +2,7 @@ import os
 import shutil
 import pytest
 
+from submodule_utils.metadata.annotation import GroovyAnnotation
 from extract_annotated_patches import *
 from extract_annotated_patches.tests import (
         OUTPUT_DIR, OUTPUT_PATCH_DIR, ANNOTATION_DIR,
@@ -32,14 +33,25 @@ def annotated_slide_names():
 
 @pytest.fixture(scope='module')
 def slide_paths():
+    """Get path of all mock slides.
+    """
     return utils.get_paths(SLIDE_DIR,
             utils.create_patch_pattern(default_slide_pattern),
             extensions=['tiff'])
 
 @pytest.fixture(scope='module')
-def slide_path(slide_paths):
-    """Get path of slide with slide ID 'MMRd/VOA-1099A'
+def mock_data(slide_paths):
+    """Get path of slide with slide ID 'MMRd/VOA-1099A'. Fails when slide does not exist.
     """
     slide_ids = map(create_slide_id, slide_paths)
-    x = next(filter(lambda x: x[0] == 'MMRd/VOA-1099A', zip(slide_ids, slide_paths)))
-    return x[1]
+    slide_id_to_path = zip(slide_ids, slide_paths)
+    payload = { }
+    for id in ['MMRd/VOA-1099A']:
+        x = next(filter(lambda x: x[0] == id, slide_id_to_path))
+        slide_id, slide_path = x
+        _, slide_name = slide_id.split('/')
+        annotation_path = os.path.join(ANNOTATION_DIR, f"{slide_name}.txt")
+        payload[slide_name] = { }
+        payload[slide_name]['slide_path'] = slide_path
+        payload[slide_name]['annotation'] = GroovyAnnotation(annotation_path)
+    return payload

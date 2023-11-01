@@ -25,11 +25,13 @@ class MockConnection(object):
     def recv(self, obj):
         return self.obj
 
-def test_extract_1(clean_output, slide_path):
+def test_extract_1(clean_output, mock_data):
+    slide_path = mock_data['VOA-1099A']['slide_path']
     """
     Last run extracted 3286 patches
     """
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
+    patch_size = 1024
     args_str = f"""
     from-arguments
     --patch_location {OUTPUT_PATCH_DIR}
@@ -38,6 +40,7 @@ def test_extract_1(clean_output, slide_path):
     use-annotation
     --annotation_location {ANNOTATION_DIR}
     --slide_coords_location {slide_coords_location}
+    --patch_size {patch_size}
     """
     parser = extract_annotated_patches.parser.create_parser()
     config = parser.get_args(args_str.split())
@@ -49,3 +52,36 @@ def test_extract_1(clean_output, slide_path):
     ape.extract_patch_by_annotation(slide_path, class_size_to_patch_path, send_end)
     cm = recv_end.recv()
     assert isinstance(cm, CoordsMetadata)
+
+    """Check Stroma patches
+    """
+    annotation = mock_data['VOA-1099A']['annotation']
+    extracted_coord_seq = cm.get_topleft_coords('Tumor')
+    patch_files = os.listdir(class_size_to_patch_path['Tumor'][patch_size])
+    assert len(patch_files) > 0
+    assert len(coord_seq) == len(patch_files)
+    for patch_file in patch_files:
+        patch_name = utils.path_to_filename(patch_file)
+        x, y = patch_name.split('_')
+        x = int(x)
+        y = int(y)
+        annotation.points_to_label(np.array([[x, y],
+                [x+patch_size, y],
+                [x, y+patch_size],
+                [x+patch_size, y+patch_size]])) == 'Tumor'
+        assert (x, y,) in extracted_coord_seq
+
+    extracted_coord_seq = cm.get_topleft_coords('Stroma')
+    patch_files = os.listdir(class_size_to_patch_path['Stroma'][patch_size])
+    assert len(patch_files) > 0
+    assert len(coord_seq) == len(patch_files)
+    for patch_file in patch_files:
+        patch_name = utils.path_to_filename(patch_file)
+        x, y = patch_name.split('_')
+        x = int(x)
+        y = int(y)
+        annotation.points_to_label(np.array([[x, y],
+                [x+patch_size, y],
+                [x, y+patch_size],
+                [x+patch_size, y+patch_size]])) == 'Stroma'
+        assert (x, y,) in extracted_coord_seq
