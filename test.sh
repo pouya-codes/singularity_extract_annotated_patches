@@ -17,7 +17,8 @@ source /projects/ovcare/classification/cchen/{pyenv}
 mkdir -p extract_annotated_patches/tests/outputs
 mkdir -p extract_annotated_patches/tests/mock/patches
 # pytest -s -vv extract_annotated_patches/tests/test_auxiliary.py
-pytest --durations=0 -s -vv extract_annotated_patches/tests/test_extract.py
+# pytest --durations=0 -s -vv extract_annotated_patches/tests/test_extract.py
 # pytest -s -vv extract_annotated_patches/tests/test_extract.py::test_extract_1
-# pytest --durations=0 -s -vv extract_annotated_patches/tests/test_run.py
+pytest --durations=0 -s -vv extract_annotated_patches/tests/test_run.py
 # pytest -s -vv extract_annotated_patches/tests/
+
