@@ -173,9 +173,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
         slide_name = utils.path_to_filename(slide_path)
         os_slide = OpenSlide(slide_path)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
-        for idx, data in enumerate(SlideCoordsExtractor(os_slide, self.patch_size,
-                shuffle=True, seed=self.seed)):
-            if self.max_slide_patches and idx > self.max_slide_patches:
+        num_extracted = 0
+        for data in SlideCoordsExtractor(os_slide, self.patch_size,
+                shuffle=True, seed=self.seed):
+            if self.max_slide_patches and num_extracted > self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """
                 break
@@ -205,7 +206,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                         patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        patch.save(os.path.join(resized_patch, f"{x}_{y}.png"))
+                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                num_extracted += 1
                 coords.add_coord(label, x, y)
         send_end.send(coords)
 
