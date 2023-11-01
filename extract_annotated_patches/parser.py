@@ -22,7 +22,7 @@ default_component_id = "extract_annotated_patches"
 def create_parser(parser):
     parser_grp = parser.add_argument_group("required arguments")
     parser_grp.add_argument("--patch_location", type=dir_path, required=True,
-            help="Directory path to extract patches to.")
+            help="Path to root directory to extract patches into.")
     parser.add_argument("--is_tumor", action='store_true',
             help="Only extract tumor patches. Default extracts tumor and normal patches.")
     parser.add_argument("--seed", type=int, default=default_seed,
