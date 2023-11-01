@@ -16,9 +16,8 @@ description="""Extract annotated patches.
 epilog="""
 """
 
-default_component_id = "extract_annotated_patches"
-
-@manifest_arguments(description=description, epilog=epilog, default_component_id=default_component_id)
+@manifest_arguments(description=description, epilog=epilog,
+        default_component_id=default_component_id)
 def create_parser(parser):
     parser_grp = parser.add_argument_group("required arguments")
     parser_grp.add_argument("--patch_location", type=dir_path, required=True,

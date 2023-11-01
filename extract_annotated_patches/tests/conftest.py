@@ -22,8 +22,8 @@ def clean_output():
     os.mkdir(OUTPUT_PATCH_DIR)
     yield None
     if CLEAN_AFTER_RUN:
-        if os.path.isdir(patch_dir):
-            shutil.rmtree(patch_dir)
+        if os.path.isdir(OUTPUT_PATCH_DIR):
+            shutil.rmtree(OUTPUT_PATCH_DIR)
         for file in os.listdir(OUTPUT_DIR):
             os.unlink(os.path.join(OUTPUT_DIR, file))
 
