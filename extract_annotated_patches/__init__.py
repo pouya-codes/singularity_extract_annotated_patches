@@ -173,6 +173,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
 
             if not self.resize_sizes:
                 self.resize_sizes = [self.patch_size]
+
         self.slide_paths = self.get_slide_paths()
         if config.num_patch_workers:
             self.n_process = config.num_patch_workers
@@ -397,7 +398,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 dict_hist_coord['coords'].append(np.array([x, y]))
         kmeans = KMeans(n_clusters=self.n_clusters, random_state=0)
         if self.n_clusters > len(dict_hist_coord['hist']):
-            print(f"No patches can be selected from {slide_name}.")
+            logger.info(f"No patches can be selected from {slide_name}.")
+            send_end.send(None)
             return
         clusters = kmeans.fit_predict(dict_hist_coord['hist'])
         # Another Kmeans on location
@@ -432,6 +434,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
               f" for representing {slide_name}.")
         utils.save_hdf5(hd5_file_path, paths, self.patch_size)
         send_end.send(coords)
+
 
     def produce_args(self, cur_slide_paths):
         """Produce arguments to send to patch extraction subprocess. Creates subdirectories for patches if necessary.
@@ -550,7 +553,6 @@ class AnnotatedPatchesExtractor(OutputMixin):
             coords_to_merge.extend(map(lambda x: x.recv(), recv_end_list))
             for p in processes:
                 p.join()
-            # coords_to_merge.extend(map(lambda x: x.recv(), recv_end_list))
 
         if self.should_use_annotation:
             """Merge slide coords
