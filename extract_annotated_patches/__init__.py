@@ -403,6 +403,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             return
         clusters = kmeans.fit_predict(dict_hist_coord['hist'])
         # Another Kmeans on location
+        paths = []
         for n_cluster in range(self.n_clusters):
             idx = np.where(clusters==n_cluster)[0]
             if len(idx)==0: continue
@@ -413,7 +414,6 @@ class AnnotatedPatchesExtractor(OutputMixin):
             kmeans_.fit(selected_coords)
             # Find the nearest
             final_idx = np.argmin(kmeans_.transform(selected_coords), axis=0)
-            paths = []
             for idx_ in final_idx:
                 dict_num_patch['selected'] += 1
                 x, y = selected_coords[idx_]
