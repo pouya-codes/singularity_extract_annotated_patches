@@ -1,48 +1,22 @@
-
 echo """# Extract Annotated Patches
 
-**Before runing any experiment to be sure you are using the latest commits of all modules run the following script:**
-\`\`\`
-/projects/ovcare/classification/singularity_modules/update_moudles.sh
-\`\`\`
-
-To build the singularity image do:
+### Development Information ###
 
 \`\`\`
-singularity build --remote extract_annotated_patches.sif Singularityfile.def
+Date Created: 22 July 2020
+Last Update: 11 April 2021 by Amirali
+Developer: Colin Chen
+Version: 1.0
 \`\`\`
 
-Here's an example of the setup you can use:
-
-\`experiment.yaml\`
-
+**Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
 \`\`\`
-extract_annotated_patches:
-    patch_location: /projects/ovcare/classification/cchen/ml/data/test_ec/patches
-    use-directory:
-        slide_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slides
-        use-annotation:
-            annotation_location: /projects/ovcare/classification/cchen/ml/data/test_ec/annotations
-            slide_coords_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slide_coor
-ds.json
-            patch_size: 1024
-            resize_size: [256]
+(cd /projects/ovcare/classification/singularity_modules ; ./update_modules.sh --bcgsc-pass your/bcgsc/path)
 \`\`\`
 
-In the SH file, you should bind the path to the slides if the slides in your slides directory specified by \`--slide_location\` is symlinked.
-
+### Usage ###
 \`\`\`
-singularity run \
-    -B /projects/ovcare/classification/cchen \
-    -B /projects/ovcare/WSI \
-    extract_annotated_patches.sif \
-    from-experiment-manifest /path/to/experiment.yaml \
-
-\`\`\`
-
-## Usage
-
-\`\`\`""" > README.md
+""" > README.md
 
 python app.py -h >> README.md
 echo >> README.md
@@ -57,6 +31,7 @@ echo >> README.md
 python app.py from-arguments use-directory use-slide-coords -h >> README.md
 echo >> README.md
 python app.py from-arguments use-directory use-annotation -h >> README.md
+echo >> README.md
+python app.py from-arguments use-directory use-entire-slide -h >> README.md
 echo """\`\`\`
 """ >> README.md
-

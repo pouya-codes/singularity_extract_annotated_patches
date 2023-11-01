@@ -1,44 +1,22 @@
 # Extract Annotated Patches
 
-**Before runing any experiment to be sure you are using the latest commits of all modules run the following script:**
-```
-/projects/ovcare/classification/singularity_modules/update_moudles.sh
-```
-
-To build the singularity image do:
+### Development Information ###
 
 ```
-singularity build --remote extract_annotated_patches.sif Singularityfile.def
+Date Created: 22 July 2020
+Last Update: 11 April 2021 by Amirali
+Developer: Colin Chen
+Version: 1.0
 ```
 
-Here's an example of the setup you can use:
-
-`experiment.yaml`
-
+**Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
 ```
-extract_annotated_patches:
-    patch_location: /projects/ovcare/classification/cchen/ml/data/test_ec/patches
-    use-directory:
-        slide_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slides
-        use-annotation:
-            annotation_location: /projects/ovcare/classification/cchen/ml/data/test_ec/annotations
-            slide_coords_location: /projects/ovcare/classification/cchen/ml/data/test_ec/slide_coor
-ds.json
-			annotation_overlap: 0.5
-            patch_overlap: 0.8
-            patch_size: 1024
-            resize_size: [256]
+(cd /projects/ovcare/classification/singularity_modules ; ./update_modules.sh --bcgsc-pass your/bcgsc/path)
 ```
 
-In the SH file, you should bind the path to the slides if the slides in your slides directory specified by `--slide_location` is symlinked.
-
-```
-singularity run     -B /projects/ovcare/classification/cchen     -B /projects/ovcare/WSI     extract_annotated_patches.sif     from-experiment-manifest /path/to/experiment.yaml
+### Usage ###
 ```
 
-## Usage
-
-```
 usage: app.py [-h] {from-experiment-manifest,from-arguments} ...
 
 Extract annotated patches.
@@ -77,7 +55,7 @@ positional arguments:
     use-manifest        Use manifest file to locate slides.
                             A manifest JSON file contains keys 'patients', and optionally 'patient_regex' which is the regex string used to extract the patient from the slide name.
                             The key 'patients' which is a dictionary where each key is a patient ID and value is a list of slide paths for the slides corresponding to the patient.
-
+                        
                             {
                                 patient_regex: str|None,
                                 patients: {
@@ -112,20 +90,20 @@ use-manifest is not implemented yet
 usage: app.py from-arguments use-directory [-h] --slide_location
                                            SLIDE_LOCATION
                                            [--slide_pattern SLIDE_PATTERN]
-                                           {use-slide-coords,use-annotation}
+                                           {use-slide-coords,use-annotation,use-entire-slide}
                                            ...
 
 positional arguments:
-  {use-slide-coords,use-annotation}
+  {use-slide-coords,use-annotation,use-entire-slide}
                         Specify which coordinates in the slides to extract.
-                                There are 2 ways of extracting patches: by slide_cords and by annotation.
+                                There are 3 ways of extracting patches: by slide_cords, by annotation, and by entire_slide.
     use-slide-coords    Specify patches to extract using slide coordinates.
                                 A slide coords JSON file containing keys 'patch_size' and 'coords'.
                                 The key 'patch_size' gives the pixel width, height of the patch.
                                 Coordinates are a list of size 2 lists of numbers representing the x, y pixel coordinates.
                                 The [x, y] list represents the coordinates of the top left corner of the patch_size * patch_size extracted patch.
                                 Coordinates are indexed by slide name for the slide the patches are from, and annotation the patches are labeled with.
-
+                        
                                 {
                                     patch_size: int,
                                     coords: {
@@ -142,9 +120,13 @@ positional arguments:
 
     use-annotation      Specify patches to extract by annotation.
                                 If a slide is named 'VOA-1823A' then the annotation file for that slide is a text file named 'VOA-1823A.txt' with each line containing (i.e.):
-
+                        
                                 Tumor [Point: 84332.8046875, 68421.28125, Point: 84332.8046875, 68421.28125,...]
                                 Stroma [...]
+
+    use-entire-slide    Extracting patches from the whole slide. In this way,
+                                both tumor and normal areas will be extracted.
+                                The label is called Mix.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -176,6 +158,9 @@ usage: app.py from-arguments use-directory use-annotation [-h]
                                                           SLIDE_COORDS_LOCATION
                                                           [--patch_size PATCH_SIZE]
                                                           [--resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]]
+                                                          [--is_TMA]
+                                                          [--patch_overlap PATCH_OVERLAP]
+                                                          [--annotation_overlap ANNOTATION_OVERLAP]
                                                           [--max_slide_patches MAX_SLIDE_PATCHES]
 
 optional arguments:
@@ -184,17 +169,21 @@ optional arguments:
   --patch_size PATCH_SIZE
                         Patch size in pixels to extract from slide.
                          (default: 1024)
-  --annotation_overlap: ANNOTATION_OVERLAP
-  						Patches having overlapp above this value with the annotated pixels will be extracted.
-                         (default: 1.0)
-
-   --patch_overlap: ANNOTATION_OVERLAP
-  						Overlap between extracted patches.
-                         (default: 0.0)
 
   --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
                         List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.
                          (default: None)
+
+  --is_TMA              TMA cores are simple image instead of slide.
+                         (default: False)
+
+  --patch_overlap PATCH_OVERLAP
+                        Overlap between extracted patches.
+                         (default: 0)
+
+  --annotation_overlap ANNOTATION_OVERLAP
+                        Patches having overlapp above this value with the annotated pixels will be extracted.
+                         (default: 1.0)
 
   --max_slide_patches MAX_SLIDE_PATCHES
                         Select at most max_slide_patches number of patches from each slide.
@@ -208,4 +197,34 @@ required arguments:
   --slide_coords_location SLIDE_COORDS_LOCATION
                         Path to slide coords JSON file to save extracted patch coordinates.
                          (default: None)
+
+usage: app.py from-arguments use-directory use-entire-slide
+       [-h] --slide_coords_location SLIDE_COORDS_LOCATION
+       [--patch_size PATCH_SIZE] [--stride STRIDE]
+       [--resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]]
+       [--max_slide_patches MAX_SLIDE_PATCHES]
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+  --patch_size PATCH_SIZE
+                        Patch size in pixels to extract from slide.
+                         (default: 1024)
+
+  --stride STRIDE       Stride in pixels which determines the gap between each two extracted patches. NOTE: This value will be added with the patch_size for actual stride.For example, if patch_size is 2048 and stride is 2000, the actual stride is 2000+2048=4048.
+                         (default: 0)
+
+  --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
+                        List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.
+                         (default: None)
+
+  --max_slide_patches MAX_SLIDE_PATCHES
+                        Select at most max_slide_patches number of patches from each slide.
+                         (default: None)
+
+required arguments:
+  --slide_coords_location SLIDE_COORDS_LOCATION
+                        Path to slide coords JSON file to save extracted patch coordinates.
+                         (default: None)
 ```
+
