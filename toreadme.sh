@@ -1,6 +1,11 @@
 
 echo """# Extract Annotated Patches
 
+**Before runing any experiment to be sure you are using the latest commits of all modules run the following script:**
+\`\`\`
+/projects/ovcare/classification/singularity_modules/update_moudles.sh
+\`\`\`
+
 To build the singularity image do:
 
 \`\`\`
