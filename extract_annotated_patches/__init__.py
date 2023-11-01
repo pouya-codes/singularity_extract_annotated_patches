@@ -344,7 +344,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 dict_hist_coord['hist'].append(hist)
                 dict_hist_coord['coords'].append(np.array([x, y]))
         kmeans = KMeans(n_clusters=self.n_clusters, random_state=0)
-        if self.n_clusters > len(dict_hist_coord['hist']): continue
+        if self.n_clusters > len(dict_hist_coord['hist']):
+            print(f"No patches can be selected from {slide_name}.")
+            return
         clusters = kmeans.fit_predict(dict_hist_coord['hist'])
         # Another Kmeans on location
         for n_cluster in range(self.n_clusters):
