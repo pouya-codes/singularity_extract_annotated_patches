@@ -198,6 +198,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             coordinates, paths, patch_size, resize_sizes, evaluation_size = self.open_hd5_file(hd5_file_location)
             os_slide = OpenSlide(slide_path)
             for (x, y), path in zip(coordinates, paths):
+                os.makedirs(os.path.join(self.patch_location, os.path.split(path)[0]), exist_ok=True)
                 patch = preprocess.extract(os_slide, x, y, patch_size)
                 for resize_size in resize_sizes:
                     save_location = os.path.join(self.patch_location, path)
