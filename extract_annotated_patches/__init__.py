@@ -87,7 +87,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             if file.endswith(".txt"):
                 slide_name = utils.path_to_filename(file)
                 filepath = os.path.join(self.annotation_location, file)
-                slide_annotation[slide_name] = GroovyAnnotation(filepath)
+                slide_annotation[slide_name] = GroovyAnnotation(filepath, logger)
         return slide_annotation
 
     def __init__(self, config):
