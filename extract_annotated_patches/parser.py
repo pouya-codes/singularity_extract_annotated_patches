@@ -20,6 +20,9 @@ default_component_id = "extract_annotated_patches"
 
 @manifest_arguments(description=description, epilog=epilog, default_component_id=default_component_id)
 def create_parser(parser):
+    parser_grp = parser.add_argument_group("required arguments")
+    parser_grp.add_argument("--patch_location", type=dir_path, required=True,
+            help="Directory path to extract patches to.")
     parser.add_argument("--is_tumor", action='store_true',
             help="Only extract tumor patches. Default extracts tumor and normal patches.")
     parser.add_argument("--seed", type=int, default=default_seed,
@@ -109,10 +112,10 @@ def create_parser(parser):
         parser_annotation_grp = parser_annotation.add_argument_group("required arguments")
         parser_annotation_grp.add_argument("--annotation_location", type=dir_path, required=True,
                 help="Path to immediate directory containing slide's annotation TXTs.")
-        parser_annotation_grp.add_argument("--slide_coords_location", type=file_path, required=True,
+        parser_annotation_grp.add_argument("--slide_coords_location", type=str, required=True,
                 help="Path to slide coords JSON file to save extracted patch coordinates.")
         parser_annotation.add_argument("--patch_size", type=int,
-                default=1024,
+                default=default_patch_size,
                 help="Patch size in pixels to extract from slide.")
         parser_annotation.add_argument("--resize_sizes", nargs='+', type=int, required=False,
                 help="List of patch sizes in pixels to resize the extracted patches and save. "

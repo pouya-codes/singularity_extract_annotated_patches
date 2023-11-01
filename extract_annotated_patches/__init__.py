@@ -9,20 +9,24 @@ from openslide import OpenSlide
 
 import submodule_utils as utils
 from submodule_utils.subtype_enum import BinaryEnum
-from submodule_utils.mixins import (OutputMixin, SlideCoordsMixin)
-from submodule_utils.annotation import GroovyAnnotation
-from submodule_utils.manifest.slide_coords import (
+from submodule_utils.mixins import OutputMixin
+from submodule_utils.metadata.annotation import GroovyAnnotation
+from submodule_utils.metadata.slide_coords import (
         SlideCoordsMetadata, CoordsMetadata)
+from submodule_utils.image.extract import (
+        SlideCoordsExtractor, SlidePatchExtractor)
 import submodule_utils.image.preprocess as preprocess
 # from submodule_utils.manifest.patient_slides import PatientSlidesMetadata
-from submodule_cv.dataset import SlideCoordsExtractor
+# from submodule_cv.dataset import SlideCoordsExtractor
 
 logger = logging.getLogger('extract_annotated_patches')
 
-default_seed = 256
 default_component_id = "extract_annotated_patches"
+default_seed = 256
+default_slide_pattern = 'subtype'
+default_patch_size = 1024
 
-class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
+class AnnotatedPatchesExtractor(OutputMixin):
     """Extracted annotated patches
 
     Attributes
@@ -55,7 +59,7 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
         return self.subcommand == 'use-annotation'
 
     def get_slide_paths(self):
-        """
+        """Get paths of slides that should be extracted.
         """
         if self.should_use_manifest:
             # return self.patient_slides.slidepaths
@@ -67,7 +71,7 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
             raise NotImplementedError()
 
     def load_slide_annotation_lookup(self):
-        """Load annotation TXT files from annotation_location and set up 
+        """Load annotation TXT files from annotation_location and set up lookup table for slide region annotations from slide names.
 
         Returns
         -------
@@ -85,6 +89,7 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
         """
         TODO: fix import-annotations and export-annotations
         """
+        self.patch_location = config.patch_location
         self.is_tumor = config.is_tumor
         self.seed = config.seed
         self.load_method = config.load_method
@@ -121,6 +126,10 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
         self.n_process = psutil.cpu_count()
     
     def print_parameters(self):
+        """
+        TODO: finish this.
+        TODO: remember to print counts of patches, etc.
+        """
         pass
 
     def extract_patch_by_slide_coords(self, slide_path, class_size_to_patch_path):
@@ -171,7 +180,7 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
                 """
                 break
             patch, tile_loc, resized_patches = data
-            tile_x, tile_y, x, y = tile_loc
+            tile_x, tile_y, x, y = data
             label = self.slide_annotation[slide_name].points_to_label(
                     np.array([[x, y],
                         [x+self.patch_size, y],
@@ -186,15 +195,18 @@ class AnnotatedPatchesExtractor(OutputMixin, SlideCoordsMixin):
                 """
                 continue
             
-            ndpatch = utils.image.preprocess.pillow_image_to_ndarray(
-                    resized_patches[self.patch_size])
+            patch = preprocess.extract(os_slide, x, y, self.patch_size)
+            ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
             if utils.image.preprocess.check_luminance(ndpatch):
                 """Save labeled forground patch
                 """
-                for resize_size in self.resize_sizes:
                     patch_path = class_size_to_patch_path[label][resize_size]
-                    resized_patches[resize_size].save(os.path.join(patch_path,
-                            f"{x}_{y}.png"))
+                for resize_size in self.resize_sizes:
+                    if resize_size == self.patch_size:
+                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    else:
+                        resized_patch = preprocess.resize(patch, resize_size)
+                        patch.save(os.path.join(resized_patch, f"{x}_{y}.png"))
                 coords.add_coord(label, x, y)
         send_end.send(coords)
 
