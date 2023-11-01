@@ -536,6 +536,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
         if hasattr(self, 'slide_idx') and self.slide_idx is not None:
             self.slide_paths = utils.select_slides(self.slide_paths, self.slide_idx, self.n_process)
         n_slides = len(self.slide_paths)
+        if n_slides==1:
+            logger.info(f"Extracting patches from {self.slide_paths}")
         coords_to_merge = []
         prefix = "Extracting from slides: "
         for idx in tqdm(range(0, n_slides, self.n_process),

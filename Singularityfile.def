@@ -16,6 +16,8 @@ From: debian:9
     git \
     openslide-tools
     rm -rf /var/lib/apt/lists/*
+    apt-get update
+    apt-get install ffmpeg libsm6 libxext6 -y
     apt-get clean
 
     echo "Installing Python libraries"

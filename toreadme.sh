@@ -4,7 +4,7 @@ echo """# Extract Annotated Patches
 
 \`\`\`
 Date Created: 22 July 2020
-Last Update: 9 June 2021 by Amirali
+Last Update: 11 June 2021 by Amirali
 Developer: Colin Chen
 Version: 1.3.2
 \`\`\`
