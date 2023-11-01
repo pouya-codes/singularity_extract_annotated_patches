@@ -55,15 +55,8 @@ positional arguments:
     from-hd5-files      uses pre created hd5 files located at hd5_location to create and store images in patch_location
 
     use-manifest        Use manifest file to locate slides.
-                            A manifest JSON file contains keys 'patients', and optionally 'patient_regex' which is the regex string used to extract the patient from the slide name.
-                            The key 'patients' which is a dictionary where each key is a patient ID and value is a list of slide paths for the slides corresponding to the patient.
-                        
-                            {
-                                patient_regex: str|None,
-                                patients: {
-                                    [patient ID]: [str, ...],
-                                    ...
-                                }
+                            a CSV file with minimum of 1 column and maximum of 3 columns. The name of columns
+                            should be among ['slide', 'annotation', 'subtype']. slide must be one of the columns.
                             }
 
     use-directory       Use a rootdir to locate slides.
