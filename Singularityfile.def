@@ -28,7 +28,7 @@ From: debian:9
     conda update conda
     git clone https://github.com/openslide/openslide-python.git
     pip install /openslide-python
-    pip install pyyaml h5py openslide-python tabulate matplotlib pandas Shapely numpy pytest
+    pip install pyyaml h5py openslide-python tabulate matplotlib pandas Shapely numpy pytest opencv-python
     pip install psutil tqdm
     pip install --upgrade h5py
 
