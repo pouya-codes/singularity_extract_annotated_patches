@@ -13,7 +13,7 @@ from extract_annotated_patches import *
 from extract_annotated_patches.tests import (
         OUTPUT_DIR, OUTPUT_PATCH_DIR, ANNOTATION_DIR,
         PATCH_PATTERN, PATCH_DIR, SLIDE_DIR,
-        create_slide_id)
+        create_slide_id, list_to_space_sep_str)
 
 def test_mock(annotated_slide_names, slide_paths, mock_data):
     """Do a reality check with mock, ...etc variables.
@@ -80,7 +80,7 @@ def test_parse_args_2():
     --annotation_location {ANNOTATION_DIR}
     --slide_coords_location {slide_coords_location}
     --patch_size {patch_size}
-    --resize_sizes {' '.join(map(str, resize_sizes))}
+    --resize_sizes {list_to_space_sep_str(resize_sizes)}
     --max_slide_patches {max_slide_patches}
     """
     parser = extract_annotated_patches.parser.create_parser()
@@ -186,7 +186,52 @@ def test_produce_args_1(clean_output, mock_data):
     assert os.path.isdir(class_size_to_patch_path['Tumor'][default_patch_size])
 
 
+def test_produce_args_2(clean_output, mock_data):
+    slide_path = mock_data['POLE/VOA-1932A']['slide_path']
+    slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
+    patch_size = 512
+    resize_sizes = [256, 128]
+    args_str = f"""
+    from-arguments
+    --patch_location {OUTPUT_PATCH_DIR}
+    use-directory
+    --slide_location {SLIDE_DIR}
+    use-annotation
+    --annotation_location {ANNOTATION_DIR}
+    --slide_coords_location {slide_coords_location}
+    --patch_size {patch_size}
+    --resize_sizes {list_to_space_sep_str(resize_sizes)}
+    """
+    parser = extract_annotated_patches.parser.create_parser()
+    config = parser.get_args(args_str.split())
+    ape = AnnotatedPatchesExtractor(config)
+    args = ape.produce_args([slide_path])
+    assert len(args) == 1
+    assert len(args[0]) == 2
+    assert args[0][0] == slide_path
+    slide_path, class_size_to_patch_path = args[0]
+    assert sorted(['Stroma', 'Tumor']) == sorted(class_size_to_patch_path.keys())
+    assert sorted(resize_sizes) == sorted(class_size_to_patch_path['Stroma'].keys())
+    assert sorted(resize_sizes) == sorted(class_size_to_patch_path['Tumor'].keys())
+    assert class_size_to_patch_path['Stroma'][256] \
+            == f"{OUTPUT_PATCH_DIR}/Stroma/POLE/VOA-1932A/256/20"
+    assert class_size_to_patch_path['Stroma'][128] \
+            == f"{OUTPUT_PATCH_DIR}/Stroma/POLE/VOA-1932A/128/10"
+
+    assert class_size_to_patch_path['Tumor'][256] \
+            == f"{OUTPUT_PATCH_DIR}/Tumor/POLE/VOA-1932A/256/20"
+    assert class_size_to_patch_path['Tumor'][128] \
+            == f"{OUTPUT_PATCH_DIR}/Tumor/POLE/VOA-1932A/128/10"
+
+    assert os.path.isdir(class_size_to_patch_path['Stroma'][256])
+    assert os.path.isdir(class_size_to_patch_path['Stroma'][128])
+    assert os.path.isdir(class_size_to_patch_path['Tumor'][256])
+    assert os.path.isdir(class_size_to_patch_path['Tumor'][128])
+
+
 def test_count_area():
+    """Get a rough estimate of how many patches we can extract from mock slides.
+    """
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
     args_str = f"""
     from-arguments
