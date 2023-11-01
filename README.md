@@ -4,9 +4,9 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 11 April 2021 by Amirali
+Last Update: 24 April 2021 by Amirali
 Developer: Colin Chen
-Version: 1.0
+Version: 1.2
 ```
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -91,11 +91,11 @@ usage: app.py from-arguments use-directory [-h] --slide_location
                                            SLIDE_LOCATION
                                            [--slide_idx SLIDE_IDX]
                                            [--slide_pattern SLIDE_PATTERN]
-                                           {use-slide-coords,use-annotation,use-entire-slide}
+                                           {use-slide-coords,use-annotation,use-entire-slide,use-mosaic}
                                            ...
 
 positional arguments:
-  {use-slide-coords,use-annotation,use-entire-slide}
+  {use-slide-coords,use-annotation,use-entire-slide,use-mosaic}
                         Specify which coordinates in the slides to extract.
                                 There are 3 ways of extracting patches: by slide_cords, by annotation, and by entire_slide.
     use-slide-coords    Specify patches to extract using slide coordinates.
@@ -128,6 +128,10 @@ positional arguments:
     use-entire-slide    Extracting patches from the whole slide. In this way,
                                 both tumor and normal areas will be extracted.
                                 The label is called Mix.
+
+    use-mosaic          Selecting patches from the whole slide in an efficient way.
+                                In this way, first all patches will be clustered based on their RGB histogram.
+                                Then, in each cluster, another clustering will be applied for their coordiantes.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -225,6 +229,47 @@ optional arguments:
 
   --max_slide_patches MAX_SLIDE_PATCHES
                         Select at most max_slide_patches number of patches from each slide.
+                         (default: None)
+
+required arguments:
+  --slide_coords_location SLIDE_COORDS_LOCATION
+                        Path to slide coords JSON file to save extracted patch coordinates.
+                         (default: None)
+
+usage: app.py from-arguments use-directory use-mosaic [-h]
+                                                      --slide_coords_location
+                                                      SLIDE_COORDS_LOCATION
+                                                      [--patch_size PATCH_SIZE]
+                                                      [--evaluation_size EVALUATION_SIZE]
+                                                      [--n_clusters N_CLUSTERS]
+                                                      [--percentage PERCENTAGE]
+                                                      [--stride STRIDE]
+                                                      [--resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+  --patch_size PATCH_SIZE
+                        Patch size in pixels to extract from slide.
+                         (default: 1024)
+
+  --evaluation_size EVALUATION_SIZE
+                        Patch size in pixels to calculate clusters based on that. This should be at lower resolution (e.g. 5x) since it has more contexual information.
+                         (default: 128)
+
+  --n_clusters N_CLUSTERS
+                        Number of color clusters. This value should be selected based on the slide.
+                         (default: 9)
+
+  --percentage PERCENTAGE
+                        Percentage of patches to build the mosaic.
+                         (default: 0.05)
+
+  --stride STRIDE       Stride in pixels which determines the gap between each two extracted patches. NOTE: This value will be added with the patch_size for actual stride.For example, if patch_size is 2048 and stride is 2000, the actual stride is 2000+2048=4048.
+                         (default: 0)
+
+  --resize_sizes RESIZE_SIZES [RESIZE_SIZES ...]
+                        List of patch sizes in pixels to resize the extracted patches and save. Each size should be at most patch_size. Default simply saves the extracted patch.
                          (default: None)
 
 required arguments:

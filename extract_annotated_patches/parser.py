@@ -6,7 +6,7 @@ from submodule_utils.manifest.arguments import manifest_arguments
 from submodule_utils.arguments import (
         AIMArgumentParser,
         dir_path, file_path, dataset_origin, balance_patches_options,
-        str_kv, int_kv, subtype_kv, make_dict, positive_int,
+        str_kv, int_kv, subtype_kv, make_dict, positive_int, float_less_one,
         ParseKVToDictAction, CustomHelpFormatter)
 from extract_annotated_patches import *
 
@@ -158,3 +158,37 @@ def create_parser(parser):
                 "Default simply saves the extracted patch.")
         parser_entire.add_argument("--max_slide_patches", type=int,
                 help="Select at most max_slide_patches number of patches from each slide.")
+
+        help_mosaic = """Selecting patches from the whole slide in an efficient way.
+        In this way, first all patches will be clustered based on their RGB histogram.
+        Then, in each cluster, another clustering will be applied for their coordiantes."""
+        parser_mosaic = subparsers_extract.add_parser("use-mosaic",
+                help=help_mosaic)
+        parser_mosaic_grp = parser_mosaic.add_argument_group("required arguments")
+        parser_mosaic_grp.add_argument("--slide_coords_location", type=str, required=True,
+                help="Path to slide coords JSON file to save extracted patch coordinates.")
+        parser_mosaic.add_argument("--patch_size", type=int,
+                default=default_patch_size,
+                help="Patch size in pixels to extract from slide.")
+        parser_mosaic.add_argument("--evaluation_size", type=int,
+                default=default_evaluation_size,
+                help="Patch size in pixels to calculate clusters based on that. "
+                "This should be at lower resolution (e.g. 5x) since it has more "
+                "contexual information.")
+        parser_mosaic.add_argument("--n_clusters", type=positive_int,
+                default=9,
+                help="Number of color clusters. This value should "
+                "be selected based on the slide.")
+        parser_mosaic.add_argument("--percentage", type=float_less_one,
+                default=0.05,
+                help="Percentage of patches to build the mosaic.")
+        parser_mosaic.add_argument("--stride", type=int,
+                default=0,
+                help="Stride in pixels which determines the gap between each two extracted patches."
+                " NOTE: This value will be added with the patch_size for actual stride."
+                "For example, if patch_size is 2048 and stride is 2000, the actual stride "
+                "is 2000+2048=4048.")
+        parser_mosaic.add_argument("--resize_sizes", nargs='+', type=int,
+                help="List of patch sizes in pixels to resize the extracted patches and save. "
+                "Each size should be at most patch_size. "
+                "Default simply saves the extracted patch.")

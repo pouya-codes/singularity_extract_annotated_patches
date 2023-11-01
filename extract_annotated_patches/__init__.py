@@ -5,12 +5,14 @@ import logging
 import json
 import multiprocessing as mp
 from PIL import Image
+import math
 # Libraries
 import psutil
 from tqdm import tqdm
 import yaml
 import numpy as np
 from openslide import OpenSlide
+from sklearn.cluster import KMeans
 
 # Modules
 import submodule_utils as utils
@@ -29,6 +31,7 @@ default_component_id = "extract_annotated_patches"
 default_seed = 256
 default_slide_pattern = 'subtype'
 default_patch_size = 1024
+default_evaluation_size = int(default_patch_size/8) # 5x
 
 class AnnotatedPatchesExtractor(OutputMixin):
     """Extracted annotated patches
@@ -65,6 +68,10 @@ class AnnotatedPatchesExtractor(OutputMixin):
     @property
     def should_use_entire_slide(self):
         return self.extract_method == 'use-entire-slide'
+
+    @property
+    def should_use_mosaic(self):
+        return self.extract_method == 'use-mosaic'
 
     def get_slide_paths(self):
         """Get paths of slides that should be extracted.
@@ -131,6 +138,13 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.patch_size = config.patch_size
             self.resize_sizes = config.resize_sizes
             self.max_slide_patches = config.max_slide_patches
+        elif self.should_use_mosaic:
+            self.stride = config.stride
+            self.patch_size = config.patch_size
+            self.evaluation_size = config.evaluation_size
+            self.resize_sizes = config.resize_sizes
+            self.n_clusters = config.n_clusters
+            self.percentage = config.percentage
         elif self.should_use_slide_coords:
             self.slide_coords_metadata = SlideCoordsMetadata.load(self.slide_coords_location)
             self.patch_size = self.slide_coords_metadata.patch_size
@@ -290,6 +304,76 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 coords.add_coord(label, x, y)
         send_end.send(coords)
 
+    def extract_patch_by_mosaic(self, slide_path,
+            class_size_to_patch_path, send_end):
+        """Extracts patches using the steps:
+         1. Moves a sliding, non-overlaping window to extract each patch to Pillow patch.
+         2. Converts patch to ndarray ndpatch and skips to next patch if background
+
+        Parameters
+        ----------
+        slide_path : str
+            Path of slide to extract patch
+
+        class_size_to_patch_path : dict
+            To get the patch path a store evaluated patch using evaluated label name and patch size as keys
+
+        send_end : multiprocessing.connection.Connection
+            Connection to send recorded coords metadata of a slide to parent.
+        """
+        slide_name = utils.path_to_filename(slide_path)
+        os_slide = OpenSlide(slide_path)
+        coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
+        dict_hist_coord = {'hist': [], 'coords': []}
+        dict_num_patch = {'total': 0, 'tissue': 0, 'selected': 0}
+
+        for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
+                                         shuffle=False, seed=self.seed,
+                                         is_TMA=False, stride=self.stride):
+
+            tile_x, tile_y, x, y = data
+            dict_num_patch['total'] += 1
+            patch = preprocess.extract(os_slide, x, y, self.patch_size)
+            ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
+            check = utils.image.preprocess.check_luminance(ndpatch)
+            if check:
+                dict_num_patch['tissue'] += 1
+                eval_patch = preprocess.resize(patch, self.evaluation_size)
+                # Get the color histogram of the image
+                hist = np.array(eval_patch.histogram())
+                dict_hist_coord['hist'].append(hist)
+                dict_hist_coord['coords'].append(np.array([x, y]))
+        kmeans = KMeans(n_clusters=self.n_clusters, random_state=0)
+        clusters = kmeans.fit_predict(dict_hist_coord['hist'])
+        # Another Kmeans on location
+        for n_cluster in range(self.n_clusters):
+            idx = np.where(clusters==n_cluster)[0]
+            if len(idx)==0: continue
+            selected_coords = np.array(dict_hist_coord['coords'])[idx]
+            n_clusters = math.ceil(len(idx) * self.percentage)
+            if n_clusters > len(idx): continue
+            kmeans_ = KMeans(n_clusters=n_clusters, random_state=0)
+            kmeans_.fit(selected_coords)
+            # Find the nearest
+            final_idx = np.argmin(kmeans_.transform(selected_coords), axis=0)
+            for idx_ in final_idx:
+                dict_num_patch['selected'] += 1
+                x, y = selected_coords[idx_]
+                patch = preprocess.extract(os_slide, x, y, self.patch_size)
+                label = "Mosaic"
+                for resize_size in self.resize_sizes:
+                    patch_path = class_size_to_patch_path[label][resize_size]
+                    if resize_size == self.patch_size:
+                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    else:
+                        resized_patch = preprocess.resize(patch, resize_size)
+                        resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                coords.add_coord(label, x, y)
+        print(f"From {dict_num_patch['total']} total patches, {dict_num_patch['tissue']} "
+              f" of them contains tissue, and {dict_num_patch['selected']} are selected"
+              f" for representing {slide_name}.")
+        send_end.send(coords)
+
     def produce_args(self, cur_slide_paths):
         """Produce arguments to send to patch extraction subprocess. Creates subdirectories for patches if necessary.
 
@@ -336,6 +420,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
                         class_size_to_patch_path[label] = make_patch_path(label)
             elif self.should_use_entire_slide:
                 label = "Mix"
+                class_size_to_patch_path[label] = make_patch_path(label)
+            elif self.should_use_mosaic:
+                label = "Mosaic"
                 class_size_to_patch_path[label] = make_patch_path(label)
             elif self.should_use_slide_coords:
                 if not self.slide_coords_metadata.has_slide(slide_name):
@@ -387,6 +474,11 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     recv_end_list.append(recv_end)
                     args = (*args, send_end,)
                     p = mp.Process(target=self.extract_patch_by_entire_slide, args=args)
+                elif self.should_use_mosaic:
+                    recv_end, send_end = mp.Pipe(False)
+                    recv_end_list.append(recv_end)
+                    args = (*args, send_end,)
+                    p = mp.Process(target=self.extract_patch_by_mosaic, args=args)
                 elif self.should_use_slide_coords:
                     p = mp.Process(target=self.extract_patch_by_slide_coords, args=args)
                 p.start()

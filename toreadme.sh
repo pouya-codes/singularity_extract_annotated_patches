@@ -4,9 +4,9 @@ echo """# Extract Annotated Patches
 
 \`\`\`
 Date Created: 22 July 2020
-Last Update: 11 April 2021 by Amirali
+Last Update: 24 April 2021 by Amirali
 Developer: Colin Chen
-Version: 1.0
+Version: 1.2
 \`\`\`
 
 **Before running any experiment to be sure you are using the latest commits of all modules run the following script:**
@@ -33,6 +33,8 @@ echo >> README.md
 python app.py from-arguments use-directory use-annotation -h >> README.md
 echo >> README.md
 python app.py from-arguments use-directory use-entire-slide -h >> README.md
+echo >> README.md
+python app.py from-arguments use-directory use-mosaic -h >> README.md
 echo """\`\`\`
 """ >> README.md
 
