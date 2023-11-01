@@ -31,3 +31,13 @@ create_slide_id = lambda path: utils.create_patch_id(path,
         utils.create_patch_pattern(default_slide_pattern))
 
 list_to_space_sep_str = lambda l : ' '.join(map(str, l))
+
+class MockConnection(object):
+    def __init__(self):
+        self.obj = None
+
+    def send(self, obj):
+        self.obj = obj
+    
+    def recv(self):
+        return self.obj

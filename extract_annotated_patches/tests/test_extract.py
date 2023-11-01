@@ -14,17 +14,9 @@ from extract_annotated_patches import *
 from extract_annotated_patches.tests import (
         OUTPUT_DIR, OUTPUT_PATCH_DIR, ANNOTATION_DIR,
         PATCH_PATTERN, PATCH_DIR, SLIDE_DIR,
-        create_slide_id, list_to_space_sep_str)
+        create_slide_id, list_to_space_sep_str,
+        MockConnection)
 
-class MockConnection(object):
-    def __init__(self):
-        self.obj = None
-
-    def send(self, obj):
-        self.obj = obj
-    
-    def recv(self):
-        return self.obj
 
 # @pytest.mark.skip(reason="")
 def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
