@@ -4,7 +4,7 @@ import os.path
 import logging
 import json
 import multiprocessing as mp
-
+from PIL import Image
 # Libraries
 import psutil
 from tqdm import tqdm
@@ -40,7 +40,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         When 'use-annotation' is set, we DO NOT set slide_coords. Instead each child process creates a SlideCoordsMetadata and then uses multiprocess.Pipe to send them to the parent process to merge.
     """
     FULL_MAGNIFICATION = 40
-    MAX_N_PROCESS = 100
+    MAX_N_PROCESS = 48
 
     def get_magnification(self, resize_size):
         return int(float(resize_size) * float(self.FULL_MAGNIFICATION) \
@@ -70,7 +70,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             raise NotImplementedError("use-manifest is not yet implemented")
         elif self.should_use_directory:
             return utils.get_paths(self.slide_location, self.slide_pattern,
-                    extensions=['tiff', 'svs', 'scn'])
+                    extensions=['tiff', 'tif', 'svs', 'scn'])
         else:
             raise NotImplementedError()
 
@@ -87,7 +87,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
             if file.endswith(".txt"):
                 slide_name = utils.path_to_filename(file)
                 filepath = os.path.join(self.annotation_location, file)
-                slide_annotation[slide_name] = GroovyAnnotation(filepath, self.overlap_threshold, logger)
+                slide_annotation[slide_name] = GroovyAnnotation(filepath, self.overlap_threshold,
+                                                                self.patch_size, self.is_TMA, logger)
         return slide_annotation
 
     def __init__(self, config):
@@ -113,8 +114,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
         if self.should_use_annotation:
             self.annotation_location = config.annotation_location
             self.overlap_threshold = config.overlap_threshold
-            self.slide_annotation = self.load_slide_annotation_lookup()
             self.patch_size = config.patch_size
+            self.is_TMA = config.is_TMA
+            self.slide_annotation = self.load_slide_annotation_lookup()
             self.resize_sizes = config.resize_sizes
             self.__resize_sizes = config.resize_sizes
             self.max_slide_patches = config.max_slide_patches
@@ -180,11 +182,16 @@ class AnnotatedPatchesExtractor(OutputMixin):
             Connection to send recorded coords metadata of a slide to parent.
         """
         slide_name = utils.path_to_filename(slide_path)
-        os_slide = OpenSlide(slide_path)
+        if not self.is_TMA:
+            os_slide = OpenSlide(slide_path)
+        else:
+            os_slide = Image.open(slide_path).convert('RGB')
+            os_slide = preprocess.expand(os_slide, self.patch_size, self.overlap_threshold)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         num_extracted = 0
         for data in SlideCoordsExtractor(os_slide, self.patch_size,
-                shuffle=True, seed=self.seed):
+                                         shuffle=True, seed=self.seed,
+                                         is_TMA=self.is_TMA):
             if self.max_slide_patches and num_extracted >= self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """
@@ -204,9 +211,14 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 continue
 
-            patch = preprocess.extract(os_slide, x, y, self.patch_size)
+            patch = preprocess.extract(os_slide, x, y, self.patch_size, is_TMA=self.is_TMA)
             ndpatch = utils.image.preprocess.pillow_image_to_ndarray(patch)
-            if utils.image.preprocess.check_luminance(ndpatch):
+            if self.overlap_threshold < 0.35:
+                blank_percent = 0.9
+            else:
+                blank_percent = 0.75
+            check = utils.image.preprocess.check_luminance(ndpatch, blank_percent=blank_percent)
+            if check:
                 """Save labeled forground patch
                 """
                 for resize_size in self.resize_sizes:
