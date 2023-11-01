@@ -62,20 +62,24 @@ class AnnotatedPatchesExtractor(OutputMixin):
         return self.load_method == 'use-directory'
 
     @property
+    def should_use_hd5_files(self):
+        return self.load_method == 'from-hd5-files'
+
+    @property
     def should_use_slide_coords(self):
-        return self.extract_method == 'use-slide-coords'
+        return self.extract_method == 'use-slide-coords' if hasattr(self, 'extract_method') else False
 
     @property
     def should_use_annotation(self):
-        return self.extract_method == 'use-annotation'
+        return self.extract_method == 'use-annotation' if hasattr(self, 'extract_method') else False
 
     @property
     def should_use_entire_slide(self):
-        return self.extract_method == 'use-entire-slide'
+        return self.extract_method == 'use-entire-slide' if hasattr(self, 'extract_method') else False
 
     @property
     def should_use_mosaic(self):
-        return self.extract_method == 'use-mosaic'
+        return self.extract_method == 'use-mosaic' if hasattr(self, 'extract_method') else False
 
     def get_slide_paths(self):
         """Get paths of slides that should be extracted.
@@ -83,7 +87,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         if self.should_use_manifest:
             # return self.patient_slides.slidepaths
             raise NotImplementedError("use-manifest is not yet implemented")
-        elif self.should_use_directory:
+        elif self.should_use_directory or self.should_use_hd5_files:
             return utils.get_paths(self.slide_location, self.slide_pattern,
                     extensions=['tiff', 'tif', 'svs', 'scn'])
         else:
@@ -114,7 +118,6 @@ class AnnotatedPatchesExtractor(OutputMixin):
         """
         self.patch_location = config.patch_location
         self.hd5_location = config.hd5_location
-        self.generate_patches_from_hd5_files = config.generate_patches_from_hd5_files
         self.is_tumor = config.is_tumor
         self.seed = config.seed
         self.load_method = config.load_method
@@ -127,56 +130,59 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.slide_location = config.slide_location
             self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
             self.slide_idx = config.slide_idx
+        elif self.load_method == 'from-hd5-files':
+            self.slide_location = config.slide_location
+            self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
         else:
             raise NotImplementedError(f"Load method {self.load_method} not implemented")
 
-        self.extract_method = config.extract_method
-        self.slide_coords_location = config.slide_coords_location
-        if self.should_use_annotation:
-            self.annotation_location = config.annotation_location
-            self.annotation_overlap = config.annotation_overlap
-            self.patch_overlap = config.patch_overlap
-            self.patch_size = config.patch_size
-            self.is_TMA = config.is_TMA
-            self.slide_annotation = self.load_slide_annotation_lookup()
-            self.resize_sizes = config.resize_sizes
-            self.__resize_sizes = config.resize_sizes
-            self.max_slide_patches = config.max_slide_patches
-        elif self.should_use_entire_slide:
-            self.stride = config.stride
-            self.patch_size = config.patch_size
-            self.resize_sizes = config.resize_sizes
-            self.max_slide_patches = config.max_slide_patches
-        elif self.should_use_mosaic:
-            self.stride = config.stride
-            self.patch_size = config.patch_size
-            self.evaluation_size = config.evaluation_size
-            self.resize_sizes = config.resize_sizes
-            self.n_clusters = config.n_clusters
-            self.percentage = config.percentage
-        elif self.should_use_slide_coords:
-            self.slide_coords_metadata = SlideCoordsMetadata.load(self.slide_coords_location)
-            self.patch_size = self.slide_coords_metadata.patch_size
-            self.resize_sizes = self.slide_coords_metadata.resize_sizes
-        else:
-            raise NotImplementedError(f"Extract method {self.extract_method} not implemented")
+        if self.load_method != 'from-hd5-files':
+            self.extract_method = config.extract_method
+            self.slide_coords_location = config.slide_coords_location
+            if self.should_use_annotation:
+                self.annotation_location = config.annotation_location
+                self.annotation_overlap = config.annotation_overlap
+                self.patch_overlap = config.patch_overlap
+                self.patch_size = config.patch_size
+                self.is_TMA = config.is_TMA
+                self.slide_annotation = self.load_slide_annotation_lookup()
+                self.resize_sizes = config.resize_sizes
+                self.__resize_sizes = config.resize_sizes
+                self.max_slide_patches = config.max_slide_patches
+            elif self.should_use_entire_slide:
+                self.stride = config.stride
+                self.patch_size = config.patch_size
+                self.resize_sizes = config.resize_sizes
+                self.max_slide_patches = config.max_slide_patches
+            elif self.should_use_mosaic:
+                self.stride = config.stride
+                self.patch_size = config.patch_size
+                self.evaluation_size = config.evaluation_size
+                self.resize_sizes = config.resize_sizes
+                self.n_clusters = config.n_clusters
+                self.percentage = config.percentage
+            elif self.should_use_slide_coords:
+                self.slide_coords_metadata = SlideCoordsMetadata.load(self.slide_coords_location)
+                self.patch_size = self.slide_coords_metadata.patch_size
+                self.resize_sizes = self.slide_coords_metadata.resize_sizes
+            else:
+                raise NotImplementedError(f"Extract method {self.extract_method} not implemented")
 
-        if not self.resize_sizes:
-            self.resize_sizes = [self.patch_size]
+            if not self.resize_sizes:
+                self.resize_sizes = [self.patch_size]
         self.slide_paths = self.get_slide_paths()
         if config.num_patch_workers:
             self.n_process = config.num_patch_workers
         else:
             self.n_process = psutil.cpu_count()
 
-    def save_hdf5(self, output_path, asset_dict, mode='w'):
-        if not self.generate_patches_from_hd5_files:
-            file = h5py.File(output_path, mode)
-            for key, val in asset_dict.items():
-                np_val = np.array(val, dtype=h5py.special_dtype(vlen=str))
-                file.create_dataset(key, data=np_val)
-
-            file.close()
+    def save_hdf5(self, output_path, paths, mode='w'):
+        hf = h5py.File(output_path, mode)
+        dset1 = hf.create_dataset('paths', data=paths)
+        hf.attrs['patch_size'] = self.patch_size
+        hf.attrs['resize_sizes'] = self.resize_sizes
+        hf.attrs['evaluation_size'] = self.evaluation_size if hasattr(self, "evaluation_size") else 0
+        hf.close()
 
     def print_parameters(self):
         """
@@ -184,6 +190,24 @@ class AnnotatedPatchesExtractor(OutputMixin):
         TODO: remember to print counts of patches, etc.
         """
         pass
+
+    def extract_patch_by_hd5_files(self, slide_path, class_size_to_patch_path):
+        try:
+            slide_name = utils.path_to_filename(slide_path)
+            hd5_file_location = os.path.join(self.hd5_location, f"{slide_name}.h5")
+            coordinates, paths, patch_size, resize_sizes, evaluation_size = self.open_hd5_file(hd5_file_location)
+            os_slide = OpenSlide(slide_path)
+            for (x, y), path in zip(coordinates, paths):
+                patch = preprocess.extract(os_slide, x, y, patch_size)
+                for resize_size in resize_sizes:
+                    save_location = os.path.join(self.patch_location, path)
+                    if resize_size == patch_size:
+                        patch.save(save_location)
+                    else:
+                        resized_patch = preprocess.resize(patch, resize_size)
+                        resized_patch.save(save_location)
+        except Exception as e:
+            logger.error(f"could not process f{hd5_file_location}\n{e}")
 
     def extract_patch_by_slide_coords(self, slide_path, class_size_to_patch_path):
         slide_name = utils.path_to_filename(slide_path)
@@ -207,8 +231,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     resized_patch = preprocess.resize(patch, resize_size)
                     resized_patch.save(save_location)
 
-    def get_coordinates_from_hd5_file(self, hd5_path):
-        """Extract coordinates from a hd5 file.
+    def open_hd5_file(self, hd5_path):
+        """Extract data from a hd5 file.
 
         Parameters
         ----------
@@ -217,19 +241,25 @@ class AnnotatedPatchesExtractor(OutputMixin):
 
         Returns
         -------
-        tuple
-            A list of
-            - 0 (int)
-            - 0 (int)
-            - x (int)
-            - y (int) where x and y are pixel coordinates of slide image and (x,y) = (0,0) is the top left corner of the image.
-        """
 
+        A list of
+            - coordinates (array) where 1st element and 2st elemet are pixel coordinates of slide image and (x,y) = (0,0) is the top left corner of the image.
+            - paths (array)
+            - patch_size (int)
+            - resize_sizes (array)
+            - evaluation_size (int)
+        """
         coordinates = []
         with h5py.File(hd5_path, "r") as f:
+            paths = ['/'.join(str(path).split('/')[-5:])[:-1] for path in list(f['paths'])]
             for x, y in [str(os.path.basename(path))[2:-5].split("_") for path in list(f['paths'])]:
-                coordinates.append([0, 0, int(x), int(y)])
-        return coordinates
+                coordinates.append([int(x), int(y)])
+
+            patch_size = f.attrs['patch_size']
+            resize_sizes = f.attrs['resize_sizes']
+            evaluation_size = f.attrs['evaluation_size']
+
+        return coordinates, paths, patch_size, resize_sizes, evaluation_size
 
     def extract_patch_by_annotation(self, slide_path,
             class_size_to_patch_path, send_end):
@@ -258,8 +288,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         num_extracted = 0
         paths = []
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
-        for data in self.get_coordinates_from_hd5_file(hd5_file_path) if self.generate_patches_from_hd5_files else\
-                SlideCoordsExtractor(os_slide, self.patch_size, self.patch_overlap,
+        for data in SlideCoordsExtractor(os_slide, self.patch_size, self.patch_overlap,
                                          shuffle=True, seed=self.seed,
                                          is_TMA=self.is_TMA):
             if self.max_slide_patches and num_extracted >= self.max_slide_patches:
@@ -293,17 +322,16 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and (self.store_extracted_patches or self.generate_patches_from_hd5_files):
+                    if resize_size == self.patch_size and self.store_extracted_patches:
                         patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        if self.store_extracted_patches or self.generate_patches_from_hd5_files:
+                        if self.store_extracted_patches:
                             resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
                 num_extracted += 1
                 coords.add_coord(label, x, y)
-        asset_dict = {'paths': paths}
-        self.save_hdf5(hd5_file_path, asset_dict)
+        self.save_hdf5(hd5_file_path, paths)
         send_end.send(coords)
 
     def extract_patch_by_entire_slide(self, slide_path,
@@ -329,8 +357,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         num_extracted = 0
         paths = []
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
-        for data in self.get_coordinates_from_hd5_file(hd5_file_path) if self.generate_patches_from_hd5_files else \
-                SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
+        for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
                                          shuffle=False, seed=self.seed,
                                          is_TMA=False, stride=self.stride):
             if self.max_slide_patches and num_extracted >= self.max_slide_patches:
@@ -347,17 +374,16 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 label = "Mix"
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and (self.store_extracted_patches or self.generate_patches_from_hd5_files):
+                    if resize_size == self.patch_size and self.store_extracted_patches:
                         patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        if self.store_extracted_patches or self.generate_patches_from_hd5_files:
+                        if self.store_extracted_patches:
                             resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
                 num_extracted += 1
                 coords.add_coord(label, x, y)
-        asset_dict = {'paths': paths}
-        self.save_hdf5(hd5_file_path, asset_dict)
+        self.save_hdf5(hd5_file_path, paths)
         send_end.send(coords)
 
     def extract_patch_by_mosaic(self, slide_path,
@@ -384,8 +410,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         dict_num_patch = {'total': 0, 'tissue': 0, 'selected': 0}
 
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
-        for data in self.get_coordinates_from_hd5_file(hd5_file_path) if self.generate_patches_from_hd5_files else \
-                SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
+        for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
                                          shuffle=False, seed=self.seed,
                                          is_TMA=False, stride=self.stride):
 
@@ -425,19 +450,18 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 label = "Mosaic"
                 for resize_size in self.resize_sizes:
                     patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
-                    if resize_size == self.patch_size and (self.store_extracted_patches or self.generate_patches_from_hd5_files):
+                    if resize_size == self.patch_size and self.store_extracted_patches:
                         patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        if self.store_extracted_patches or self.generate_patches_from_hd5_files:
+                        if self.store_extracted_patches:
                             resized_patch.save(os.path.join(patch_path))
                     paths.append(patch_path)
                 coords.add_coord(label, x, y)
         print(f"From {dict_num_patch['total']} total patches, {dict_num_patch['tissue']} "
               f" of them contains tissue, and {dict_num_patch['selected']} are selected"
               f" for representing {slide_name}.")
-        asset_dict = {'paths': paths}
-        self.save_hdf5(hd5_file_path, asset_dict)
+        self.save_hdf5(hd5_file_path, paths)
         send_end.send(coords)
 
     def produce_args(self, cur_slide_paths):
@@ -468,7 +492,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     size_patch_path[resize_size] = os.path.join(
                             self.patch_location, class_name, slide_id,
                             str(resize_size), str(self.get_magnification(resize_size)))
-                    if self.store_extracted_patches or self.generate_patches_from_hd5_files:
+                    if self.store_extracted_patches or self.should_use_hd5_files:
                         os.makedirs(size_patch_path[resize_size], exist_ok=True)
                 return size_patch_path
 
@@ -506,6 +530,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     for label in self.slide_coords_metadata \
                             .get_slide(slide_name).labels:
                         class_size_to_patch_path[label] = make_patch_path(label)
+            elif self.should_use_hd5_files:
+                pass
             else:
                 raise NotImplementedError(f"Extract method {self.extract_method} not implemented")
             arg = (slide_path, class_size_to_patch_path)
@@ -520,7 +546,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             logger.info(f"Number of CPU processes of {self.n_process} is too high. Setting to {self.MAX_N_PROCESS}")
             self.n_process = self.MAX_N_PROCESS
         logger.info(f"Number of CPU processes: {self.n_process}")
-        if self.slide_idx is not None:
+        if hasattr(self, 'slide_idx') and self.slide_idx is not None:
             self.slide_paths = utils.select_slides(self.slide_paths, self.slide_idx, self.n_process)
         n_slides = len(self.slide_paths)
         coords_to_merge = []
@@ -531,23 +557,26 @@ class AnnotatedPatchesExtractor(OutputMixin):
             processes = []
             recv_end_list = []
             for args in self.produce_args(cur_slide_paths):
-                if self.should_use_annotation:
-                    recv_end, send_end = mp.Pipe(False)
-                    recv_end_list.append(recv_end)
-                    args = (*args, send_end,)
-                    p = mp.Process(target=self.extract_patch_by_annotation, args=args)
-                elif self.should_use_entire_slide:
-                    recv_end, send_end = mp.Pipe(False)
-                    recv_end_list.append(recv_end)
-                    args = (*args, send_end,)
-                    p = mp.Process(target=self.extract_patch_by_entire_slide, args=args)
-                elif self.should_use_mosaic:
-                    recv_end, send_end = mp.Pipe(False)
-                    recv_end_list.append(recv_end)
-                    args = (*args, send_end,)
-                    p = mp.Process(target=self.extract_patch_by_mosaic, args=args)
-                elif self.should_use_slide_coords:
-                    p = mp.Process(target=self.extract_patch_by_slide_coords, args=args)
+                if self.should_use_hd5_files:
+                    p = mp.Process(target=self.extract_patch_by_hd5_files, args=args)
+                else :
+                    if self.should_use_annotation:
+                        recv_end, send_end = mp.Pipe(False)
+                        recv_end_list.append(recv_end)
+                        args = (*args, send_end,)
+                        p = mp.Process(target=self.extract_patch_by_annotation, args=args)
+                    elif self.should_use_entire_slide:
+                        recv_end, send_end = mp.Pipe(False)
+                        recv_end_list.append(recv_end)
+                        args = (*args, send_end,)
+                        p = mp.Process(target=self.extract_patch_by_entire_slide, args=args)
+                    elif self.should_use_mosaic:
+                        recv_end, send_end = mp.Pipe(False)
+                        recv_end_list.append(recv_end)
+                        args = (*args, send_end,)
+                        p = mp.Process(target=self.extract_patch_by_mosaic, args=args)
+                    elif self.should_use_slide_coords:
+                        p = mp.Process(target=self.extract_patch_by_slide_coords, args=args)
                 p.start()
                 processes.append(p)
             coords_to_merge.extend(map(lambda x: x.recv(), recv_end_list))

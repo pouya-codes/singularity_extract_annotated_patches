@@ -34,15 +34,24 @@ def create_parser(parser):
     parser.add_argument("--store_extracted_patches", action='store_true',
             help="Whether or not save extracted patches as png files on the disk.")
 
-    parser.add_argument("--generate_patches_from_hd5_files", action='store_true',
-            help="Extracts and stores patches on the disk based on their coordinates at hd5 files")
-
     help_subparsers_load = """Specify how to load slides to extract.
-    There are 2 ways of extracting slides: by manifest and by directory."""
+    There are 3 ways of extracting slides: from hd5 files, by manifest and by directory."""
     subparsers_load = parser.add_subparsers(dest='load_method',
             required=True,
             parser_class=AIMArgumentParser,
             help=help_subparsers_load)
+
+    parser_hd5_files = subparsers_load.add_parser("from-hd5-files",
+            help="uses pre created hd5 files located at hd5_location to create and store images in patch_location")
+    parser_hd5_files.add_argument("--slide_location", type=dir_path, required=True,
+            help="Path to slide rootdir.")
+    parser_hd5_files.add_argument("--slide_pattern", type=str,
+            default='subtype',
+            help="'/' separated words describing the directory structure of the "
+            "slide paths. Normally slides paths look like "
+            "/path/to/slide/rootdir/subtype/slide.svs and if slide paths are "
+            "/path/to/slide/rootdir/slide.svs then simply pass ''.")
+
 
     help_manifest = """Use manifest file to locate slides.
     A manifest JSON file contains keys 'patients', and optionally 'patient_regex' which is the regex string used to extract the patient from the slide name.
