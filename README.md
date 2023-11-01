@@ -238,7 +238,7 @@ optional arguments:
                          (default: None)
 
   --slide_pattern SLIDE_PATTERN
-                        '/' separated words describing the directory structure of the slide paths. Normally slides paths look like /path/to/slide/rootdir/subtype/slide.svs and if slide paths are /path/to/slide/rootdir/slide.svs then simply pass ''.
+                        '/' separated words describing the directory structure of the slide paths. Normally slides paths look like /path/to/slide/rootdir/subtype/slide.svs and if slide paths are /path/to/slide/rootdir/slide.svs then simply pass '' (using bash script, it is impossible to pass '', therefore in that case, use "'".).
                          (default: subtype)
 
   --mask_location MASK_LOCATION
