@@ -145,7 +145,7 @@ def test_from_arguments_use_directory_annotation_2(clean_output, mock_data):
         patch_files = os.listdir(patch_dir)
         # assert len(patch_files) > 0
         num_stroma_patch_files = len(patch_files)
-        assert len(num_stroma_patch_files) <= 200
+        assert num_stroma_patch_files <= 200
         assert len(extracted_coord_seq) == len(patch_files)
         for patch_file in patch_files:
             patch_name = utils.path_to_filename(patch_file)
