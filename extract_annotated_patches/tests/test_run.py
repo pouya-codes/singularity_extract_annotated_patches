@@ -18,7 +18,7 @@ from extract_annotated_patches.tests import (
 def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
     """
     TODO: test SlideCoordsMetadata more
-    1998.59s (0:33:18)
+    Time: 1998.59s (0:33:18)
     """
     slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
     patch_size = 1024
