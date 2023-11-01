@@ -176,7 +176,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         num_extracted = 0
         for data in SlideCoordsExtractor(os_slide, self.patch_size,
                 shuffle=True, seed=self.seed):
-            if self.max_slide_patches and num_extracted > self.max_slide_patches:
+            if self.max_slide_patches and num_extracted >= self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
                 """
                 break
@@ -210,6 +210,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 num_extracted += 1
                 coords.add_coord(label, x, y)
         send_end.send(coords)
+        print("num_extracted", num_extracted)
 
     def produce_args(self, cur_slide_paths):
         """Produce arguments to send to patch extraction subprocess. Creates subdirectories for patches if necessary.
