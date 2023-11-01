@@ -135,7 +135,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         """
         if self.should_use_manifest:
             if 'annotation_path' not in self.manifest:
-                raise ValueError("There is no column named annotation in the manifest file.")
+                raise ValueError("There is no column named annotation_path in the manifest file.")
             generator = self.manifest['annotation_path']
         elif self.should_use_directory:
             generator = os.listdir(self.annotation_location)
@@ -452,8 +452,9 @@ class AnnotatedPatchesExtractor(OutputMixin):
         paths = []
         label = 'Mix'
         hd5_file_path = os.path.join(self.hd5_location, f"{slide_name}.h5")
+        shuffle_coordinate = True if self.max_slide_patches is not None else False
         for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
-                                         shuffle=False, seed=self.seed,
+                                         shuffle=shuffle_coordinate, seed=self.seed,
                                          is_TMA=False, stride=self.stride):
             if self.max_slide_patches is not None and num_extracted >= self.max_slide_patches:
                 """Stop extracting patches once we have reach the max number of them for this slide.
@@ -593,7 +594,6 @@ class AnnotatedPatchesExtractor(OutputMixin):
             mask = self.mask[slide_name] if self.use_mask and slide_name in self.mask else None
             PlotThumbnail(slide_name, os_slide, hd5_file_path, None, mask=mask)
         send_end.send(coords)
-
 
     def produce_args(self, cur_slide_paths):
         """Produce arguments to send to patch extraction subprocess. Creates subdirectories for patches if necessary.
