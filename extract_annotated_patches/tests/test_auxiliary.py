@@ -63,6 +63,7 @@ def test_parse_args_1():
     assert not ape.should_use_slide_coords
     assert ape.resize_sizes == [default_patch_size]
     assert ape.slide_pattern == utils.create_patch_pattern(default_slide_pattern)
+    area = ape.slide_annotation['VOA-1099A'].get_area()
 
 def test_parse_args_2():
     patch_size = 2048
@@ -178,4 +179,23 @@ def test_produce_args_1(clean_output, slide_path):
             == f"{OUTPUT_PATCH_DIR}/Tumor/MMRd/VOA-1099A/1024/40"
     assert os.path.isdir(class_size_to_patch_path['Stroma'][default_patch_size])
     assert os.path.isdir(class_size_to_patch_path['Tumor'][default_patch_size])
+
+def test_count_area():
+    slide_coords_location = os.path.join(OUTPUT_DIR, 'slide_coords.json')
+    args_str = f"""
+    from-arguments
+    --patch_location {OUTPUT_PATCH_DIR}
+    use-directory
+    --slide_location {SLIDE_DIR}
+    use-annotation
+    --annotation_location {ANNOTATION_DIR}
+    --slide_coords_location {slide_coords_location}
+    """
+    parser = extract_annotated_patches.parser.create_parser()
+    config = parser.get_args(args_str.split())
+    ape = AnnotatedPatchesExtractor(config)
+    area = ape.slide_annotation['VOA-1099A'].get_area()
+    print()
+    print('Stroma: estimate patches extracted', area['Stroma'] / (1024**2))
+    print('Tumor: estimate patches extracted', area['Tumor'] / (1024**2))
 
