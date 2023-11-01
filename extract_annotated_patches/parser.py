@@ -119,6 +119,8 @@ def create_parser(parser):
                 help="Path to immediate directory containing slide's annotation TXTs.")
         parser_annotation_grp.add_argument("--slide_coords_location", type=str, required=True,
                 help="Path to slide coords JSON file to save extracted patch coordinates.")
+        parser_annotation.add_argument("--save_png_files", action='store_true',
+                help="Weather or not save extracted patches as png files on the disk.")
         parser_annotation.add_argument("--patch_size", type=int,
                 default=default_patch_size,
                 help="Patch size in pixels to extract from slide.")

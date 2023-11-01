@@ -8,5 +8,8 @@ extract_annotated_patches/.__init__.py.swp
 extract_annotated_patches/tests/outputs/
 extract_annotated_patches/tests/mock/slides/*
 submodule_cv/
-submodule_utils/
+submodule_utils
 .idea/
+/Dataset
+/venv
+/extract_annotated_patches/openfile.py

@@ -9,10 +9,11 @@ import math
 # Libraries
 import psutil
 from tqdm import tqdm
-import yaml
+import h5py
 import numpy as np
 from openslide import OpenSlide
 from sklearn.cluster import KMeans
+
 
 # Modules
 import submodule_utils as utils
@@ -32,6 +33,15 @@ default_seed = 256
 default_slide_pattern = 'subtype'
 default_patch_size = 1024
 default_evaluation_size = int(default_patch_size/8) # 5x
+
+
+def save_hdf5(output_path, asset_dict, mode='w'):
+    file = h5py.File(output_path, mode)
+    for key, val in asset_dict.items():
+        np_val = np.array(val, dtype=h5py.special_dtype(vlen=str))
+        file.create_dataset(key, data=np_val)
+
+    file.close()
 
 class AnnotatedPatchesExtractor(OutputMixin):
     """Extracted annotated patches
@@ -85,6 +95,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
         else:
             raise NotImplementedError()
 
+
+
     def load_slide_annotation_lookup(self):
         """Load annotation TXT files from annotation_location and set up lookup table for slide region annotations from slide names.
 
@@ -110,6 +122,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         self.is_tumor = config.is_tumor
         self.seed = config.seed
         self.load_method = config.load_method
+        self.save_png_files = config.save_png_files
         if self.should_use_manifest:
             # self.manifest_location = config.manifest_location
             # self.patient_slides = .load(self.manifest_location)
@@ -171,6 +184,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
     def extract_patch_by_slide_coords(self, slide_path, class_size_to_patch_path):
         slide_name = utils.path_to_filename(slide_path)
         os_slide = OpenSlide(slide_path)
+
         for data in self.slide_coords_metadata.get_slide(slide_name):
             label, coord = data
             x, y = coord
@@ -180,13 +194,15 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 continue
 
             patch = preprocess.extract(os_slide, x, y, self.patch_size)
+            save_location = os.path.join(patch_path, f"{x}_{y}.png")
             for resize_size in self.resize_sizes:
                 patch_path = class_size_to_patch_path[label][resize_size]
                 if resize_size == self.patch_size:
-                    patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    patch.save(save_location)
                 else:
                     resized_patch = preprocess.resize(patch, resize_size)
-                    resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    resized_patch.save(save_location)
+
 
 
     def extract_patch_by_annotation(self, slide_path,
@@ -214,6 +230,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             os_slide = preprocess.expand(os_slide, self.patch_size, self.annotation_overlap)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         num_extracted = 0
+        paths = []
         for data in SlideCoordsExtractor(os_slide, self.patch_size, self.patch_overlap,
                                          shuffle=True, seed=self.seed,
                                          is_TMA=self.is_TMA):
@@ -247,14 +264,18 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """Save labeled forground patch
                 """
                 for resize_size in self.resize_sizes:
-                    patch_path = class_size_to_patch_path[label][resize_size]
-                    if resize_size == self.patch_size:
-                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
+                    if resize_size == self.patch_size and self.save_png_files:
+                        patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                        if self.save_png_files:
+                            resized_patch.save(os.path.join(patch_path))
+                    paths.append(patch_path)
                 num_extracted += 1
                 coords.add_coord(label, x, y)
+        asset_dict = {'paths': paths}
+        save_hdf5(os.path.join(self.patch_location, f"{slide_name}.h5"), asset_dict)
         send_end.send(coords)
 
     def extract_patch_by_entire_slide(self, slide_path,
@@ -278,6 +299,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
         os_slide = OpenSlide(slide_path)
         coords = CoordsMetadata(slide_name, patch_size=self.patch_size)
         num_extracted = 0
+        paths = []
         for data in SlideCoordsExtractor(os_slide, self.patch_size, patch_overlap=0.0,
                                          shuffle=False, seed=self.seed,
                                          is_TMA=False, stride=self.stride):
@@ -294,14 +316,18 @@ class AnnotatedPatchesExtractor(OutputMixin):
                 """
                 label = "Mix"
                 for resize_size in self.resize_sizes:
-                    patch_path = class_size_to_patch_path[label][resize_size]
-                    if resize_size == self.patch_size:
-                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
+                    if resize_size == self.patch_size and self.save_png_files:
+                        patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                        if self.save_png_files:
+                            resized_patch.save(os.path.join(patch_path))
+                    paths.append(patch_path)
                 num_extracted += 1
                 coords.add_coord(label, x, y)
+        asset_dict = {'paths': paths}
+        save_hdf5(os.path.join(self.patch_location, f"{slide_name}.h5"), asset_dict)
         send_end.send(coords)
 
     def extract_patch_by_mosaic(self, slide_path,
@@ -359,22 +385,27 @@ class AnnotatedPatchesExtractor(OutputMixin):
             kmeans_.fit(selected_coords)
             # Find the nearest
             final_idx = np.argmin(kmeans_.transform(selected_coords), axis=0)
+            paths = []
             for idx_ in final_idx:
                 dict_num_patch['selected'] += 1
                 x, y = selected_coords[idx_]
                 patch = preprocess.extract(os_slide, x, y, self.patch_size)
                 label = "Mosaic"
                 for resize_size in self.resize_sizes:
-                    patch_path = class_size_to_patch_path[label][resize_size]
-                    if resize_size == self.patch_size:
-                        patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                    patch_path = os.path.join(class_size_to_patch_path[label][resize_size], f"{x}_{y}.png")
+                    if resize_size == self.patch_size and self.save_png_files:
+                        patch.save(os.path.join(patch_path))
                     else:
                         resized_patch = preprocess.resize(patch, resize_size)
-                        resized_patch.save(os.path.join(patch_path, f"{x}_{y}.png"))
+                        if self.save_png_files:
+                            resized_patch.save(os.path.join(patch_path))
+                    paths.append(patch_path)
                 coords.add_coord(label, x, y)
         print(f"From {dict_num_patch['total']} total patches, {dict_num_patch['tissue']} "
               f" of them contains tissue, and {dict_num_patch['selected']} are selected"
               f" for representing {slide_name}.")
+        asset_dict = {'paths': paths}
+        save_hdf5(os.path.join(self.patch_location, f"{slide_name}.h5"), asset_dict)
         send_end.send(coords)
 
     def produce_args(self, cur_slide_paths):
@@ -405,7 +436,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     size_patch_path[resize_size] = os.path.join(
                             self.patch_location, class_name, slide_id,
                             str(resize_size), str(self.get_magnification(resize_size)))
-                    os.makedirs(size_patch_path[resize_size], exist_ok=True)
+                    if self.save_png_files:
+                        os.makedirs(size_patch_path[resize_size], exist_ok=True)
                 return size_patch_path
 
             class_size_to_patch_path = { }
