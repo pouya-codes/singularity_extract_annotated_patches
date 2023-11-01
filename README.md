@@ -4,7 +4,7 @@
 
 ```
 Date Created: 22 July 2020
-Last Update: 22 May 2021 by Amirali
+Last Update: 3 June 2021 by Amirali
 Developer: Colin Chen
 Version: 1.3.1
 ```
@@ -90,6 +90,7 @@ usage: app.py from-arguments from-hd5-files [-h] --slide_location
                                             [--slide_pattern SLIDE_PATTERN]
                                             [--slide_idx SLIDE_IDX]
                                             [--resize RESIZE [RESIZE ...]]
+                                            [--max_num_patches MAX_NUM_PATCHES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -108,6 +109,10 @@ optional arguments:
 
   --resize RESIZE [RESIZE ...]
                         List for determining desired resize. For example, if the HDF5 file has [256, 512, 1024] patches, and we are only interested in 256, we set this flag. [256]
+                         (default: None)
+
+  --max_num_patches MAX_NUM_PATCHES
+                        Maximum number of patches we want to extract. For example, if there are 2000 patches from each HDF5, and we only need first 500 ones, we set this flag to 500. NOTE: The patches are same order that was supposed to be extracted.
                          (default: None)
 
 usage: app.py from-arguments use-directory [-h] --patch_location

@@ -52,6 +52,10 @@ def create_parser(parser):
             help="List for determining desired resize. For example, if the HDF5 file"
             " has [256, 512, 1024] patches, and we are only interested in 256, we "
             "set this flag. [256]")
+    parser_hd5_files.add_argument("--max_num_patches", type=int,
+            help="Maximum number of patches we want to extract. For example, if there are "
+            "2000 patches from each HDF5, and we only need first 500 ones, we set this flag "
+            "to 500. NOTE: The patches are same order that was supposed to be extracted.")
 
 
     help_manifest = """Use manifest file to locate slides.

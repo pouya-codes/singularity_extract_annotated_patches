@@ -129,6 +129,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
             self.slide_idx = config.slide_idx
             self.resize = config.resize
+            self.max_num_patches = config.max_num_patches
         elif self.should_use_directory:
             self.slide_location = config.slide_location
             self.slide_pattern = utils.create_patch_pattern(config.slide_pattern)
@@ -193,6 +194,7 @@ class AnnotatedPatchesExtractor(OutputMixin):
             hd5_file_location = os.path.join(self.hd5_location, f"{slide_name}.h5")
             paths, patch_size = utils.open_hd5_file(hd5_file_location)
             os_slide = OpenSlide(slide_path)
+            counter = 0
             for path in paths:
                 x, y = os.path.splitext(os.path.basename(path))[0].split('_')
                 resize_size = int(utils.get_patchsize_by_patch_path(path))
@@ -200,6 +202,8 @@ class AnnotatedPatchesExtractor(OutputMixin):
                     continue
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 patch = preprocess.extract(os_slide, int(x), int(y), patch_size)
+                if counter >= self.max_num_patches: break
+                counter += 1
                 if patch_size==resize_size:
                     patch.save(path)
                 else:
