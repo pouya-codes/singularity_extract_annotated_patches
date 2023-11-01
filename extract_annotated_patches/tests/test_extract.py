@@ -59,7 +59,7 @@ def test_from_arguments_use_directory_annotation_1(clean_output, mock_data):
     patch_files = os.listdir(class_size_to_patch_path['Tumor'][patch_size])
     assert len(patch_files) > 0
     assert len(patch_files) <= int(area['Tumor'] / (1024**2))
-    assert len() == len(patch_files)
+    assert len(extracted_coord_seq) == len(patch_files)
     for patch_file in patch_files:
         patch_name = utils.path_to_filename(patch_file)
         x, y = patch_name.split('_')
